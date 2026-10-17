@@ -17,6 +17,7 @@
       <a href="{{ url_for('listar_planos') }}">Meus planos</a>
       <a href="{{ url_for('sobre') }}">Sobre</a>
       <a href="{{ url_for('contato') }}">Contato</a>
+      <a href="{{ url_for('personal_painel') if session.get('personal_id') else url_for('personal') }}">Personal</a>
       <a href="{{ url_for('admin_painel') if session.get('admin') else url_for('admin_login') }}">Admin</a>
     </nav>
   </div>

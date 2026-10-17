@@ -36,10 +36,27 @@ CREATE TABLE IF NOT EXISTS planos (
     limitacoes TEXT NOT NULL DEFAULT '',
     focos TEXT NOT NULL DEFAULT '',
     observacoes TEXT NOT NULL DEFAULT '',
+    personal_id INTEGER,
+    anotacoes TEXT NOT NULL DEFAULT '',
     dados_json TEXT NOT NULL DEFAULT '{}',
     criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
 );
+
+CREATE TABLE IF NOT EXISTS personais (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome TEXT NOT NULL,
+    email TEXT NOT NULL UNIQUE,
+    senha_hash TEXT NOT NULL,
+    codigo TEXT NOT NULL UNIQUE,
+    criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+);
 """
+
+# Colunas adicionadas em bancos criados em versoes anteriores
+MIGRACOES_PLANOS = [
+    ("personal_id", "ALTER TABLE planos ADD COLUMN personal_id INTEGER"),
+    ("anotacoes", "ALTER TABLE planos ADD COLUMN anotacoes TEXT NOT NULL DEFAULT ''"),
+]
 
 
 def get_db():
@@ -51,6 +68,10 @@ def get_db():
 def init_db():
     conn = get_db()
     conn.executescript(SCHEMA)
+    colunas = {r[1] for r in conn.execute("PRAGMA table_info(planos)")}
+    for coluna, ddl in MIGRACOES_PLANOS:
+        if coluna not in colunas:
+            conn.execute(ddl)
     total = conn.execute("SELECT COUNT(*) c FROM exercicios").fetchone()["c"]
     if total == 0:
         conn.executemany(

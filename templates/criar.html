@@ -100,11 +100,19 @@
     </fieldset>
 
     <fieldset>
-      <legend>5. Observações (opcional)</legend>
-      <label class="campo">
-        <span>Alergias, medicamentos, cirurgias, dores recentes ou qualquer informação que devamos considerar</span>
-        <textarea name="observacoes" rows="3" placeholder="Ex.: alergia a lactose, tomo remédio para pressão, fiz cirurgia no joelho há 8 meses...">{{ dados.get('observacoes','') }}</textarea>
-      </label>
+      <legend>5. Observações e personal (opcional)</legend>
+      <div class="grade grade-2">
+        <label class="campo">
+          <span>Alergias, medicamentos, cirurgias, dores recentes ou qualquer informação que devamos considerar</span>
+          <textarea name="observacoes" rows="3" placeholder="Ex.: alergia a lactose, tomo remédio para pressão, fiz cirurgia no joelho há 8 meses...">{{ dados.get('observacoes','') }}</textarea>
+        </label>
+        <label class="campo">
+          <span>Código do seu personal trainer (ex.: FIT-ABC123)</span>
+          <input type="text" name="personal_codigo" value="{{ dados.get('personal_codigo','') }}"
+                 placeholder="FIT-XXXXXX" style="text-transform:uppercase" maxlength="10">
+          <small class="dica">Se você treina com um personal, informe o código dele: o plano ficará visível no painel dele. Deixe em branco se não tiver.</small>
+        </label>
+      </div>
     </fieldset>
 
     <label class="aceite">

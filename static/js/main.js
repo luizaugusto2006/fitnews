@@ -98,4 +98,46 @@
       }
     });
   }
+  // ---------- Busca de clientes por nome (painel do personal) ----------
+  var busca = document.getElementById("buscaClientes");
+  if (busca) {
+    var tabela = document.getElementById("tabelaClientes");
+    var vazio = document.getElementById("nenhumCliente");
+    busca.addEventListener("input", function () {
+      var termo = busca.value.trim().toLowerCase();
+      var visiveis = 0;
+      if (!tabela) return;
+      tabela.querySelectorAll("tbody tr").forEach(function (tr) {
+        var nome = (tr.cells[0] ? tr.cells[0].textContent : tr.textContent).toLowerCase();
+        var mostrar = !termo || nome.indexOf(termo) !== -1;
+        tr.style.display = mostrar ? "" : "none";
+        if (mostrar) visiveis++;
+      });
+      if (vazio) vazio.hidden = visiveis > 0;
+    });
+  }
+
+  // ---------- Copiar codigo do personal ----------
+  var copiar = document.getElementById("copiarCodigo");
+  if (copiar) {
+    copiar.addEventListener("click", function () {
+      var cod = copiar.dataset.codigo || "";
+      function ok() {
+        var texto = copiar.textContent;
+        copiar.textContent = "Copiado!";
+        setTimeout(function () { copiar.textContent = texto; }, 1500);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(cod).then(ok, ok);
+      } else {
+        var tmp = document.createElement("textarea");
+        tmp.value = cod;
+        document.body.appendChild(tmp);
+        tmp.select();
+        try { document.execCommand("copy"); } catch (e) {}
+        document.body.removeChild(tmp);
+        ok();
+      }
+    });
+  }
 })();

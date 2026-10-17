@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Painel do Personal — FitNews{% endblock %}
+{% block content %}
+<section class="container pagina-form">
+  <div class="plano-topo">
+    <div>
+      <p class="selo">PAINEL DO PERSONAL</p>
+      <h1>Olá, {{ eu['nome'] }}!</h1>
+      <p class="sub">{{ n_clientes }} cliente(s) · {{ n_planos }} plano(s) vinculado(s)</p>
+    </div>
+    <div class="plano-acoes">
+      <a href="{{ url_for('personal_novo') }}" class="btn">+ Novo plano para cliente</a>
+      <a href="{{ url_for('personal_sair') }}" class="btn btn-fantasma">Sair</a>
+    </div>
+  </div>
+
+  <div class="codigo-vinculo">
+    <div>
+      <span>Seu código de vínculo</span>
+      <strong>{{ eu['codigo'] }}</strong>
+      <small>Seu aluno informa este código no formulário "Criar plano" e o plano aparece automaticamente aqui.</small>
+    </div>
+    <button type="button" class="btn btn-peq" id="copiarCodigo" data-codigo="{{ eu['codigo'] }}">Copiar</button>
+  </div>
+
+  <div class="busca">
+    <input type="search" id="buscaClientes" placeholder="Buscar cliente pelo nome..." autocomplete="off">
+  </div>
+
+  <h2>Meus clientes</h2>
+  {% if meus %}
+  <table class="tabela-ex" id="tabelaClientes">
+    <thead><tr><th>Nome do cliente</th><th>Foco</th><th>Limitações</th><th>Plano</th><th>Data</th><th></th></tr></thead>
+    <tbody>
+      {% for p in meus %}
+      <tr>
+        <td><a href="{{ url_for('ver_plano', plano_id=p['id']) }}"><strong>{{ p['nome'] }}</strong></a>
+          {% if p['idade'] %}<br><small>{{ p['idade'] }} anos</small>{% endif %}</td>
+        <td>{% for f in (p['focos'] or '').split(',') if f %}<span class="tag tag-foco">{{ FOCO_LABELS.get(f, f) }}</span> {% endfor %}</td>
+        <td>{% for l in (p['limitacoes'] or '').split(',') if l and l != 'nenhuma' %}<span class="tag tag-limite">{{ LIMIT_LABELS.get(l, l) }}</span> {% else %}<small>—</small>{% endfor %}</td>
+        <td>#{{ p['id'] }}</td>
+        <td><small>{{ p['criado_em'] }}</small></td>
+        <td class="td-acoes">
+          <a class="btn btn-mini" href="{{ url_for('ver_plano', plano_id=p['id']) }}">Ver séries</a>
+          <form method="post" action="{{ url_for('personal_desvincular', plano_id=p['id']) }}"
+                onsubmit="return confirm('Desvincular o plano #{{ p['id'] }}?')">
+            <button class="btn btn-mini btn-fantasma" type="submit">Desvincular</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="campo-ajuda" id="nenhumCliente" hidden>Nenhum cliente encontrado com esse nome.</p>
+  {% else %}
+  <div class="vazio">
+    <p>Você ainda não tem planos vinculados.</p>
+    <p class="campo-ajuda">Compartilhe o código <strong>{{ eu['codigo'] }}</strong> com seus alunos ou clique em "Novo plano para cliente".</p>
+  </div>
+  {% endif %}
+
+  {% if sem_vinculo %}
+  <h2 style="margin-top:2.4rem">Planos aguardando vínculo</h2>
+  <p class="campo-ajuda">Planos criados sem código de personal. Clique em "Vincular" para assumir o aluno.</p>
+  <table class="tabela-ex">
+    <thead><tr><th>Nome do cliente</th><th>Foco</th><th>Data</th><th></th></tr></thead>
+    <tbody>
+      {% for p in sem_vinculo %}
+      <tr>
+        <td><a href="{{ url_for('ver_plano', plano_id=p['id']) }}"><strong>{{ p['nome'] }}</strong></a></td>
+        <td>{% for f in (p['focos'] or '').split(',') if f %}<span class="tag tag-foco">{{ FOCO_LABELS.get(f, f) }}</span> {% endfor %}</td>
+        <td><small>{{ p['criado_em'] }}</small></td>
+        <td class="td-acoes">
+          <a class="btn btn-mini btn-fantasma" href="{{ url_for('ver_plano', plano_id=p['id']) }}">Ver plano</a>
+          <form method="post" action="{{ url_for('personal_vincular', plano_id=p['id']) }}">
+            <button class="btn btn-mini" type="submit">Vincular</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</section>
+{% endblock %}

@@ -16,6 +16,7 @@
       <p class="tags">
         {% for f in plano['dados']['focos_rotulos'] %}<span class="tag tag-foco">{{ f }}</span>{% endfor %}
         {% for l in plano['dados']['limitacoes_rotulos'] %}<span class="tag tag-limite">{{ l }}</span>{% endfor %}
+        {% if personal_nome %}<span class="tag tag-personal">Personal: {{ personal_nome }}</span>{% endif %}
       </p>
     </div>
     <div class="plano-acoes">
@@ -36,6 +37,22 @@
       {% for e in plano['dados']['evitados'] %}<span class="pill pill-bloqueado"><span>{{ e }}</span></span>{% endfor %}
     </div>
   </details>
+  {% endif %}
+
+  {% if plano.get('anotacoes') or sou_dono %}
+  <section class="bloco anotacoes">
+    <h2>Anotações do personal {% if personal_nome %}<small style="color:var(--texto2)">— {{ personal_nome }}</small>{% endif %}</h2>
+    {% if plano.get('anotacoes') and not sou_dono %}
+      <p>{{ plano['anotacoes'] }}</p>
+    {% endif %}
+    {% if sou_dono %}
+      <form method="post" action="{{ url_for('personal_anotacoes', plano_id=plano['id']) }}">
+        <textarea name="anotacoes" rows="3"
+          placeholder="Ex.: subir carga no supino 2x40kg, cliente evoluiu bem; evitar remada curvada com barra.">{{ plano.get('anotacoes','') }}</textarea>
+        <button class="btn btn-peq" type="submit" style="margin-top:.6rem">Salvar anotações</button>
+      </form>
+    {% endif %}
+  </section>
   {% endif %}
 
   <div class="abas" role="tablist">

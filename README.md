@@ -35,6 +35,15 @@ sugeridos.
 8. **Meus planos** — listagem de todos os planos gerados.
 9. **Painel admin** — CRUD simples da base de exercícios (adicionar/editar/excluir,
    marcar contraindicações) e dos planos gerados.
+10. **Área do Personal Trainer** (`/personal`):
+    - Cadastro (nome, e-mail, senha) e login com sessão própria;
+    - Gera um **código de vínculo** `FIT-XXXXXX` (com botão "Copiar");
+    - **Meus clientes** com **busca por nome** — clique no nome e abra o plano/séries;
+    - **Novo plano para cliente** (já nasce vinculado);
+    - O aluno também pode informar o código no formulário do plano (vínculo automático);
+    - **Planos aguardando vínculo** — o personal assume planos criados sem código;
+    - **Anotações do personal** por plano (salvas e visíveis na página do plano);
+    - Desvincular plano; estatísticas de clientes/planos.
 
 ## Rodar localmente
 
@@ -57,6 +66,15 @@ python test_site.py
 - URL: `/admin` — padrão `admin` / `fitnews2026`
 - Altere com as variáveis de ambiente `ADMIN_USER` e `ADMIN_PASSWORD`
   (e defina uma `SECRET_KEY` forte em produção).
+
+## Área do Personal
+
+- URL: `/personal` — cadastro livre (e-mail + senha de 6+ caracteres).
+- Após o cadastro, a página mostra o **código FIT-XXXXXX** do personal.
+- O aluno informa esse código no formulário "Criar plano" (campo opcional)
+  ou o personal usa "Novo plano para cliente" / "Vincular" no painel.
+- Busca por nome em "Meus clientes"; clique no nome para ver séries e
+  anotações; botão "Ver séries" abre o plano completo.
 
 ## Publicar no PythonAnywhere
 

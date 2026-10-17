@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Área do Personal — FitNews{% endblock %}
+{% block content %}
+<section class="container pagina-form" style="max-width:520px">
+  <p class="selo">ÁREA DO PERSONAL TRAINER</p>
+  <h1>Acesse sua conta</h1>
+  <p class="sub">Gerencie seus alunos, abra os treinos e deixe suas anotações em cada plano.</p>
+
+  <div class="abas">
+    <button type="button" class="aba {{ 'ativa' if aba == 'entrar' }}" data-persona-aba="entrar">Entrar</button>
+    <button type="button" class="aba {{ 'ativa' if aba == 'criar' }}" data-persona-aba="criar">Criar conta</button>
+  </div>
+
+  <form method="post" class="formulario" id="abaEntrar" {{ '' if aba != 'criar' else 'hidden' }}>
+    <input type="hidden" name="acao" value="entrar">
+    <label class="campo"><span>E-mail</span>
+      <input type="email" name="email" required value="{{ email or '' }}" autocomplete="email"></label>
+    <label class="campo"><span>Senha</span>
+      <input type="password" name="senha" required autocomplete="current-password"></label>
+    <button class="btn btn-grande" type="submit">Entrar</button>
+  </form>
+
+  <form method="post" class="formulario" id="abaCriar" {{ '' if aba == 'criar' else 'hidden' }}>
+    <input type="hidden" name="acao" value="criar">
+    <label class="campo"><span>Seu nome <span class="obrig">*</span></span>
+      <input type="text" name="nome" required value="{{ nome or '' }}" placeholder="Ex.: João Personal"></label>
+    <label class="campo"><span>E-mail <span class="obrig">*</span></span>
+      <input type="email" name="email" required value="{{ email or '' }}" autocomplete="email"></label>
+    <label class="campo"><span>Senha (mínimo 6 caracteres) <span class="obrig">*</span></span>
+      <input type="password" name="senha" required minlength="6" autocomplete="new-password"></label>
+    <button class="btn btn-grande" type="submit">Criar minha conta</button>
+    <p class="campo-ajuda">Você receberá um <strong>código de vínculo (FIT-XXXXXX)</strong> para seus alunos informarem no formulário do plano.</p>
+  </form>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  var botoes = document.querySelectorAll("[data-persona-aba]");
+  botoes.forEach(function (b) {
+    b.addEventListener("click", function () {
+      botoes.forEach(function (x) { x.classList.remove("ativa"); });
+      b.classList.add("ativa");
+      document.getElementById("abaEntrar").hidden = b.dataset.personaAba !== "entrar";
+      document.getElementById("abaCriar").hidden = b.dataset.personaAba !== "criar";
+    });
+  });
+})();
+</script>
+{% endblock %}

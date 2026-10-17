@@ -2,10 +2,14 @@
 """FitNews - site de academia: gerador de treino, alimentacao e suplementos."""
 import json
 import os
+import secrets
+import string
+import sqlite3
 from datetime import date
 
 from flask import (Flask, abort, flash, redirect, render_template, request,
                    session, url_for)
+from werkzeug.security import check_password_hash, generate_password_hash
 
 from data_content import LIMITATION_LABELS
 from database import get_db, init_db
@@ -72,6 +76,7 @@ def ler_formulario(form):
         "limitacoes": limitacoes,
         "focos": focos,
         "observacoes": form.get("observacoes", "").strip(),
+        "personal_codigo": (form.get("personal_codigo", "") or "").strip().upper(),
     }
     erros = []
     if not dados["nome"] or len(dados["nome"]) < 2:
@@ -93,10 +98,28 @@ def index():
     return render_template("index.html")
 
 
+def _buscar_personal_por_codigo(codigo):
+    if not codigo:
+        return None
+    conn = get_db()
+    row = conn.execute("SELECT id FROM personais WHERE codigo=?",
+                       (codigo.upper(),)).fetchone()
+    conn.close()
+    return row["id"] if row else None
+
+
 @app.route("/criar", methods=["GET", "POST"])
 def criar():
     if request.method == "POST":
         dados, erros = ler_formulario(request.form)
+        # vinculo com personal: codigo informado OU personal logado que abriu o form
+        personal_id = None
+        if dados.get("personal_codigo"):
+            personal_id = _buscar_personal_por_codigo(dados["personal_codigo"])
+            if personal_id is None:
+                erros.append("Código do personal não encontrado. Confira o código ou deixe em branco.")
+        if not erros and session.get("personal_novo"):
+            personal_id = session["personal_novo"]
         if erros:
             for e in erros:
                 flash(e, "erro")
@@ -108,18 +131,22 @@ def criar():
         cur = conn.execute(
             "INSERT INTO planos (nome, sexo, data_nascimento, idade, email, telefone,"
             " peso, altura, imc, atividade, nivel_treino, dias, horario, local,"
-            " limitacoes, focos, observacoes, dados_json)"
-            " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            " limitacoes, focos, observacoes, personal_id, dados_json)"
+            " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (dados["nome"], dados["sexo"], dados["data_nascimento"], dados["idade"],
              dados["email"], dados["telefone"], dados["peso"], dados["altura"],
              dados["imc"], dados["atividade"], dados["nivel_treino"], dados["dias"],
              dados["horario"], dados["local"], ",".join(dados["limitacoes"]),
-             ",".join(dados["focos"]), dados["observacoes"], json.dumps(plano_json, ensure_ascii=False)),
+             ",".join(dados["focos"]), dados["observacoes"], personal_id,
+             json.dumps(plano_json, ensure_ascii=False)),
         )
         pid = cur.lastrowid
         conn.commit()
         conn.close()
+        session.pop("personal_novo", None)
         return redirect(url_for("ver_plano", plano_id=pid))
+    if session.get("personal_novo"):
+        flash("Novo plano: ele será vinculado automaticamente à sua conta de personal.", "ok")
     return render_template("criar.html", dados={}, focos=FOCOS, limitacoes=LIMITACOES,
                            niveis=NIVEIS, atividades=ATIVIDADES, horarios=HORARIOS)
 
@@ -140,8 +167,17 @@ def _carregar_plano(plano_id):
 @app.route("/plano/<int:plano_id>")
 def ver_plano(plano_id):
     plano = _carregar_plano(plano_id)
+    personal_nome, sou_dono = None, False
+    if plano.get("personal_id"):
+        conn = get_db()
+        row = conn.execute("SELECT nome FROM personais WHERE id=?",
+                           (plano["personal_id"],)).fetchone()
+        conn.close()
+        personal_nome = row["nome"] if row else None
+        sou_dono = session.get("personal_id") == plano["personal_id"]
     return render_template("plano.html", plano=plano, FOCO_LABELS=FOCO_LABELS,
-                           LIMIT_LABELS=LIMIT_LABELS, date=date)
+                           LIMIT_LABELS=LIMIT_LABELS, date=date,
+                           personal_nome=personal_nome, sou_dono=sou_dono)
 
 
 @app.route("/planos")
@@ -216,6 +252,171 @@ def sobre():
 @app.route("/contato")
 def contato():
     return render_template("contato.html")
+
+
+# ------------------------------------------------------------------
+# Personal trainer
+# ------------------------------------------------------------------
+def personal_logado():
+    pid = session.get("personal_id")
+    if not pid:
+        return None
+    conn = get_db()
+    row = conn.execute("SELECT * FROM personais WHERE id=?", (pid,)).fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+
+def _gerar_codigo():
+    alphabet = string.ascii_uppercase + string.digits
+    while True:
+        codigo = "FIT-" + "".join(secrets.choice(alphabet) for _ in range(6))
+        conn = get_db()
+        existe = conn.execute("SELECT 1 FROM personais WHERE codigo=?", (codigo,)).fetchone()
+        conn.close()
+        if not existe:
+            return codigo
+
+
+@app.route("/personal", methods=["GET", "POST"])
+def personal():
+    if personal_logado():
+        return redirect(url_for("personal_painel"))
+    if request.method == "POST":
+        f = request.form
+        acao = f.get("acao", "entrar")
+        if acao == "criar":
+            nome = f.get("nome", "").strip()
+            email = f.get("email", "").strip().lower()
+            senha = f.get("senha", "")
+            if len(nome) < 2 or "@" not in email or len(senha) < 6:
+                flash("Preencha nome, e-mail válido e senha com pelo menos 6 caracteres.", "erro")
+                return render_template("personal_login.html", aba="criar", nome=nome, email=email)
+            conn = get_db()
+            try:
+                cur = conn.execute(
+                    "INSERT INTO personais (nome, email, senha_hash, codigo)"
+                    " VALUES (?,?,?,?)",
+                    (nome, email, generate_password_hash(senha), _gerar_codigo()),
+                )
+                conn.commit()
+                session["personal_id"] = cur.lastrowid
+                flash(f"Conta criada! Seu código de vínculo é {conn.execute('SELECT codigo FROM personais WHERE id=?', (cur.lastrowid,)).fetchone()['codigo']}. Compartilhe com seus alunos.", "ok")
+            except sqlite3.IntegrityError:
+                flash("Já existe uma conta com este e-mail.", "erro")
+            except Exception:
+                flash("Erro ao criar conta. Tente novamente.", "erro")
+            finally:
+                conn.close()
+            return redirect(url_for("personal_painel"))
+        # entrar
+        email = f.get("email", "").strip().lower()
+        senha = f.get("senha", "")
+        conn = get_db()
+        row = conn.execute("SELECT * FROM personais WHERE email=?", (email,)).fetchone()
+        conn.close()
+        if row and check_password_hash(row["senha_hash"], senha):
+            session["personal_id"] = row["id"]
+            flash(f"Bem-vindo(a), {row['nome']}!", "ok")
+            return redirect(url_for("personal_painel"))
+        flash("E-mail ou senha inválidos.", "erro")
+        return render_template("personal_login.html", aba="entrar", email=email)
+    return render_template("personal_login.html", aba=request.args.get("aba", "entrar"))
+
+
+@app.route("/personal/sair")
+def personal_sair():
+    session.pop("personal_id", None)
+    session.pop("personal_novo", None)
+    flash("Sessão encerrada.", "ok")
+    return redirect(url_for("index"))
+
+
+@app.route("/personal/painel")
+def personal_painel():
+    eu = personal_logado()
+    if not eu:
+        return redirect(url_for("personal"))
+    q = (request.args.get("q", "") or "").strip()
+    conn = get_db()
+    sql = ("SELECT id, nome, idade, focos, limitacoes, criado_em FROM planos"
+           " WHERE personal_id=?")
+    params = [eu["id"]]
+    if q:
+        sql += " AND nome LIKE ?"
+        params.append(f"%{q}%")
+    sql += " ORDER BY id DESC"
+    meus = [dict(r) for r in conn.execute(sql, params).fetchall()]
+
+    sql2 = "SELECT id, nome, focos, criado_em FROM planos WHERE personal_id IS NULL"
+    params2 = []
+    if q:
+        sql2 += " AND nome LIKE ?"
+        params2.append(f"%{q}%")
+    sql2 += " ORDER BY id DESC LIMIT 50"
+    sem_vinculo = [dict(r) for r in conn.execute(sql2, params2).fetchall()]
+
+    n_clientes = conn.execute(
+        "SELECT COUNT(DISTINCT nome) c FROM planos WHERE personal_id=?",
+        (eu["id"],)).fetchone()["c"]
+    n_planos = len(meus)
+    conn.close()
+    return render_template("personal_painel.html", eu=eu, meus=meus,
+                           sem_vinculo=sem_vinculo, q=q,
+                           n_clientes=n_clientes, n_planos=n_planos,
+                           FOCO_LABELS=FOCO_LABELS, LIMIT_LABELS=LIMIT_LABELS)
+
+
+@app.route("/personal/novo")
+def personal_novo():
+    if not personal_logado():
+        return redirect(url_for("personal"))
+    session["personal_novo"] = session["personal_id"]
+    return redirect(url_for("criar"))
+
+
+@app.route("/personal/plano/<int:plano_id>/vincular", methods=["POST"])
+def personal_vincular(plano_id):
+    eu = personal_logado()
+    if not eu:
+        return redirect(url_for("personal"))
+    conn = get_db()
+    conn.execute("UPDATE planos SET personal_id=? WHERE id=? AND personal_id IS NULL",
+                 (eu["id"], plano_id))
+    conn.commit()
+    conn.close()
+    flash("Plano vinculado à sua conta.", "ok")
+    return redirect(url_for("personal_painel"))
+
+
+@app.route("/personal/plano/<int:plano_id>/desvincular", methods=["POST"])
+def personal_desvincular(plano_id):
+    eu = personal_logado()
+    if not eu:
+        return redirect(url_for("personal"))
+    conn = get_db()
+    conn.execute("UPDATE planos SET personal_id=NULL WHERE id=? AND personal_id=?",
+                 (plano_id, eu["id"]))
+    conn.commit()
+    conn.close()
+    flash("Plano desvinculado.", "ok")
+    return redirect(url_for("personal_painel"))
+
+
+@app.route("/personal/plano/<int:plano_id>/anotacoes", methods=["POST"])
+def personal_anotacoes(plano_id):
+    eu = personal_logado()
+    if not eu:
+        return redirect(url_for("personal"))
+    texto = request.form.get("anotacoes", "").strip()
+    conn = get_db()
+    cur = conn.execute("UPDATE planos SET anotacoes=? WHERE id=? AND personal_id=?",
+                       (texto, plano_id, eu["id"]))
+    conn.commit()
+    ok = cur.rowcount > 0
+    conn.close()
+    flash("Anotações salvas." if ok else "Você não é o personal deste plano.", "ok" if ok else "erro")
+    return redirect(url_for("ver_plano", plano_id=plano_id))
 
 
 # ------------------------------------------------------------------
