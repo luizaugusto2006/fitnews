@@ -39,11 +39,23 @@ sugeridos.
     - Cadastro (nome, e-mail, senha) e login com sessão própria;
     - Gera um **código de vínculo** `FIT-XXXXXX` (com botão "Copiar");
     - **Meus clientes** com **busca por nome** — clique no nome e abra o plano/séries;
+    - **Filtros por foco e por limitação** (ex.: só alunos com hérnia);
     - **Novo plano para cliente** (já nasce vinculado);
     - O aluno também pode informar o código no formulário do plano (vínculo automático);
     - **Planos aguardando vínculo** — o personal assume planos criados sem código;
     - **Anotações do personal** por plano (salvas e visíveis na página do plano);
     - Desvincular plano; estatísticas de clientes/planos.
+11. **Compartilhar o plano**: botão **WhatsApp**, **QR Code gerado localmente**
+    (sem serviço externo) e **copiar link**.
+12. **Timer de descanso**: botão ⏱ ao lado do descanso (pega o tempo do texto,
+    ex.: `60s`, `90-120s`, `1 min`), com barra flutuante, +15s, pular e alerta sonoro.
+13. **Trocar exercício**: botão "↻ trocar" em cada exercício abre alternativas do
+    **mesmo grupo já filtradas pelas limitações** (validadas no servidor).
+14. **Anotar cargas**: campo ao lado de cada exercício + "Salvar cargas" por dia
+    (persiste no plano e aparece no resumo impresso).
+15. **Resumo 1 página** (`/plano/<id>/resumo`): ficha enxuta para imprimir/salvar PDF.
+16. **Política de Privacidade (LGPD)** em `/privacidade` + aceite obrigatório no formulário.
+17. **Backup CSV** no admin: `Baixar planos` e `Baixar exercícios` (UTF-8 com BOM, abre no Excel).
 
 ## Rodar localmente
 

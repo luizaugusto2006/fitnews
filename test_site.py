@@ -17,7 +17,7 @@ resp = c.post("/criar", data={
     "nivel_treino": "intermediario", "dias": "4", "horario": "manha",
     "local": "academia",
     "limitacoes": ["hernia_discal", "bico_papagaio"],
-    "focos": ["pernas", "perda_peso", "core", "peito"], "aceite": "sim",
+    "focos": ["pernas", "perda_peso", "core", "peito"], "aceite": "sim", "aceite_privacidade": "sim",
 }, follow_redirects=True)
 html = resp.get_data(as_text=True)
 print("  status:", resp.status_code)
@@ -40,7 +40,7 @@ print("  -- lista de BLOQUEADOS (deve conter) --")
 for p in ["Agachamento livre", "Levantamento terra", "Bom dia", "Remada curvada",
           "Abdominal tradicional", "Russian twist", "Burpee"]:
     print("   ", p, "listado" if p in evitados else "NAO LISTADO")
-nomes = re.findall(r"<strong>([^<]+)</strong><br>", treino)
+nomes = re.findall(r"<strong>([^<]+)</strong>", treino)
 print("  exercicios do treino:", nomes)
 assert falhas == 0, "EXERCICIO PERIGOSO NO TREINO!"
 
@@ -54,12 +54,12 @@ resp2 = c.post("/plano/1/editar", data={
     "peso": "80", "altura": "175", "atividade": "moderado",
     "nivel_treino": "intermediario", "dias": "3", "horario": "manha",
     "local": "academia", "limitacoes": "hernia_discal",
-    "focos": "bracos,peito", "aceite": "sim",
+    "focos": "bracos,peito", "aceite": "sim", "aceite_privacidade": "sim",
 }, follow_redirects=True)
 html2 = resp2.get_data(as_text=True)
 m = re.search(r'id="aba-treino"(.*?)<!-- ============ AQUECIMENTO', html2, re.S)
 treino2 = m.group(1) if m else ""
-nomes2 = re.findall(r"<strong>([^<]+)</strong><br>", treino2)
+nomes2 = re.findall(r"<strong>([^<]+)</strong>", treino2)
 print("  status:", resp2.status_code, "| novos exercicios:", nomes2)
 assert not any("Leg press" in n for n in nomes2), "foco antigo persistiu (pernas)"
 assert any("Rosca" in n or "Supino" in n or "Triceps" in n for n in nomes2), "foco novo nao entrou"
@@ -103,7 +103,8 @@ r = c.post("/criar", data={
     "nome": "Maria Aluna", "sexo": "feminino", "data_nascimento": "1995-03-03",
     "peso": "60", "altura": "165", "atividade": "leve", "nivel_treino": "iniciante",
     "dias": "3", "local": "casa", "focos": ["gluteos", "core"],
-    "limitacoes": ["joelho"], "aceite": "sim", "personal_codigo": codigo,
+    "limitacoes": ["joelho"], "aceite": "sim",
+    "aceite_privacidade": "sim", "personal_codigo": codigo,
 }, follow_redirects=True)
 print("  plano com codigo criado:", r.status_code == 200)
 
@@ -116,7 +117,7 @@ print("  busca sem resultado:", "Maria Aluna" not in r.get_data(as_text=True))
 # codigo invalido bloqueia
 r = c.post("/criar", data={
     "nome": "Teste", "sexo": "", "data_nascimento": "1990-01-01", "focos": ["peito"],
-    "aceite": "sim", "personal_codigo": "FIT-XXXXXX",
+    "aceite": "sim", "aceite_privacidade": "sim", "personal_codigo": "FIT-XXXXXX",
 }, follow_redirects=True)
 print("  codigo invalido recusado:", "não encontrado" in r.get_data(as_text=True))
 
@@ -134,7 +135,7 @@ print("  tag personal no plano:", "Personal: Joao Personal" in r.get_data(as_tex
 # plano sem codigo -> vincular manualmente
 r = c.post("/criar", data={
     "nome": "Bruno Solto", "sexo": "masculino", "data_nascimento": "1988-07-07",
-    "focos": ["costas"], "aceite": "sim",
+    "focos": ["costas"], "aceite": "sim", "aceite_privacidade": "sim",
 }, follow_redirects=True)
 r = c.get("/personal/painel")
 print("  plano solito listado:", "Bruno Solto" in r.get_data(as_text=True))
@@ -152,7 +153,7 @@ r = c.get("/personal/novo", follow_redirects=True)
 print("  botao novo plano:", r.status_code == 200 and "vinculado automaticamente" in r.get_data(as_text=True))
 r = c.post("/criar", data={
     "nome": "Carla Vinculada", "sexo": "feminino", "data_nascimento": "2001-01-01",
-    "focos": ["ombros"], "aceite": "sim",
+    "focos": ["ombros"], "aceite": "sim", "aceite_privacidade": "sim",
 }, follow_redirects=True)
 conn = database.get_db()
 row = conn.execute("SELECT personal_id FROM planos WHERE nome='Carla Vinculada'").fetchone()
@@ -166,6 +167,47 @@ print("  protegido apos logout:", "Acesse sua conta" in r.get_data(as_text=True)
 r = c.post("/personal", data={"acao": "entrar", "email": "joao@fit.com", "senha": "123456"},
            follow_redirects=True)
 print("  login ok:", "PAINEL DO PERSONAL" in r.get_data(as_text=True))
+
+print("== Novas funcionalidades ==")
+r = c.get("/privacidade")
+print("  pagina privacidade:", r.status_code == 200 and "LGPD" in r.get_data(as_text=True))
+r = c.post("/criar", data={"nome": "Sem Aceite", "data_nascimento": "1990-01-01",
+                           "focos": ["peito"], "aceite": "sim"},
+           follow_redirects=True)
+print("  aceite privacidade obrigatorio:", "Política de Privacidade para gerar" in r.get_data(as_text=True))
+
+r = c.get("/admin/exportar/planos")
+print("  CSV planos:", r.status_code == 200 and "text/csv" in r.headers.get("Content-Type", ""))
+r = c.get("/admin/exportar/exercicios")
+print("  CSV exercicios:", r.status_code == 200 and "Supino" in r.get_data(as_text=True))
+
+r = c.get("/plano/1/resumo")
+print("  resumo 1 pagina:", r.status_code == 200 and "Resumo do treino" in r.get_data(as_text=True))
+
+r = c.get("/plano/1/alternativas?grupo=peito")
+alts = r.get_json()["alternativas"]
+novo_ex = alts[0]["nome"] if alts else ""
+print("  alternativas do mesmo grupo:", len(alts) > 0, "->", novo_ex)
+r = c.post("/plano/1/trocar", data={"atual": "Supino reto com barra", "novo": novo_ex},
+           follow_redirects=True)
+hp = r.get_data(as_text=True)
+print("  trocou exercicio:", novo_ex in hp and "<strong>Supino reto com barra</strong>" not in hp)
+
+r = c.post("/plano/1/cargas", json={"itens": [{"nome": novo_ex, "carga": "40kg"}]})
+print("  API cargas ok:", r.get_json().get("ok") is True)
+r = c.get("/plano/1")
+hp = r.get_data(as_text=True)
+print("  carga visivel no plano:", 'value="40kg"' in hp)
+print("  share/QR/timer no plano:", "btnWhats" in hp and "qrcode.min.js" in hp and "btn-timer" in hp)
+
+r = c.get("/personal/painel?foco=gluteos")
+hp = r.get_data(as_text=True)
+print("  filtro por foco:", "Maria Aluna" in hp and "Bruno Solto" not in hp)
+r = c.get("/personal/painel?lim=joelho")
+hp = r.get_data(as_text=True)
+print("  filtro por limitacao:", "Maria Aluna" in hp and "Bruno Solto" not in hp)
+r = c.get("/personal/painel?q=Maria&foco=core")
+print("  busca + filtro juntos:", "Maria Aluna" in r.get_data(as_text=True))
 
 print()
 print("TODOS OS TESTES PASSARAM" if falhas == 0 else "HOUVE FALHAS")

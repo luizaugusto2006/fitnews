@@ -23,9 +23,25 @@
     <button type="button" class="btn btn-peq" id="copiarCodigo" data-codigo="{{ eu['codigo'] }}">Copiar</button>
   </div>
 
-  <div class="busca">
-    <input type="search" id="buscaClientes" placeholder="Buscar cliente pelo nome..." autocomplete="off">
-  </div>
+  <form method="get" class="busca busca-filtros">
+    <input type="search" name="q" id="buscaClientes" value="{{ q }}"
+           placeholder="Buscar cliente pelo nome..." autocomplete="off">
+    <select name="foco" title="Filtrar por foco">
+      <option value="">Todos os focos</option>
+      {% for cod, rot in FOCOS %}
+      <option value="{{ cod }}" {{ 'selected' if foco == cod else '' }}>{{ rot }}</option>
+      {% endfor %}
+    </select>
+    <select name="lim" title="Filtrar por limitação">
+      <option value="">Todas as limitações</option>
+      {% for cod, rot in LIMITACOES if cod != 'nenhuma' %}
+      <option value="{{ cod }}" {{ 'selected' if lim == cod else '' }}>{{ rot }}</option>
+      {% endfor %}
+    </select>
+    <button class="btn btn-peq" type="submit">Filtrar</button>
+    {% if q or foco or lim %}<a class="btn btn-mini btn-fantasma" href="{{ url_for('personal_painel') }}">Limpar</a>{% endif %}
+  </form>
+  <p class="campo-ajuda">Dica: a busca por nome filtra enquanto você digita; foco e limitação aplicam ao clicar em Filtrar.</p>
 
   <h2>Meus clientes</h2>
   {% if meus %}

@@ -120,6 +120,11 @@
       <span>Entendo que este plano é educativo e <strong>não substitui avaliação médica ou acompanhamento profissional</strong>. Em caso de dor ou desconforto, vou interromper o exercício e procurar um profissional de saúde.</span>
     </label>
 
+    <label class="aceite">
+      <input type="checkbox" name="aceite_privacidade" value="sim" {{ 'checked' if dados.get('aceite_privacidade')=='sim' else '' }}>
+      <span>Li e aceito a <a href="{{ url_for('privacidade') }}" target="_blank">Política de Privacidade</a>: meus dados (incluindo limitações de saúde) são usados <strong>só para gerar este plano</strong> e podem ser excluídos a qualquer momento pelo site ou pelo meu personal.</span>
+    </label>
+
     <div class="acoes">
       <button type="submit" class="btn btn-grande">{{ 'Salvar alterações' if edicao_id else 'Gerar meu plano' }}</button>
       {% if edicao_id %}<a href="{{ url_for('ver_plano', plano_id=edicao_id) }}" class="btn btn-fantasma btn-grande">Cancelar</a>{% endif %}

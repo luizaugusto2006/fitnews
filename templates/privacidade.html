@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Política de Privacidade — FitNews{% endblock %}
+{% block content %}
+<section class="container pagina-form" style="max-width:820px">
+  <p class="selo">LGPD — LEI GERAL DE PROTEÇÃO DE DADOS</p>
+  <h1>Política de Privacidade</h1>
+  <p class="sub">Última atualização: outubro de 2026. Este texto explica de forma simples o que fazemos com seus dados no FitNews.</p>
+
+  <div class="bloco">
+    <h2>1. Quais dados coletamos</h2>
+    <p>Para gerar seu plano de treino, solicitamos: nome, e-mail, telefone (opcional), sexo, data de nascimento, peso, altura, nível de atividade, <strong>limitações e condições de saúde</strong> (ex.: hérnia de disco, problemas de joelho), objetivos/focos de treino e observações que você escrever. Se você informar o código de um personal, o plano fica vinculado à conta dele.</p>
+  </div>
+
+  <div class="bloco">
+    <h2>2. Para que usamos</h2>
+    <p>Exclusivamente para: (a) gerar e exibir o seu plano de treino, alimentação e suplementação; (b) vincular o plano à conta do seu personal trainer, quando você informar o código; (c) listá-lo na área de “Meus planos”. <strong>Não vendemos, não alugamos e não compartilhamos seus dados com terceiros</strong> para publicidade.</p>
+  </div>
+
+  <div class="bloco">
+    <h2>3. Base legal e dados sensíveis</h2>
+    <p>Informações de saúde (limitações) são dados sensíveis. O tratamento acontece com o seu <strong>consentimento explícito</strong> (checkbox no formulário) e com o objetivo único de adequar os exercícios à sua condição, evitando lesões — finalidade clara e informada, conforme a LGPD (Lei 13.709/2018).</p>
+  </div>
+
+  <div class="bloco">
+    <h2>4. Onde os dados ficam e por quanto tempo</h2>
+    <p>Os dados ficam em banco de dados do próprio site, hospedado no PythonAnywhere. Guardamos pelo tempo necessário para você usar o plano; o plano pode ser excluído pelo administrador do site a qualquer momento.</p>
+  </div>
+
+  <div class="bloco">
+    <h2>5. Seus direitos</h2>
+    <ul class="lista">
+      <li><strong>Acesso e correção:</strong> você pode refazer o plano ou pedir correção dos dados.</li>
+      <li><strong>Exclusão:</strong> solicite pelo Contato do site e apagaremos seus planos.</li>
+      <li><strong>Revogação:</strong> pode deixar de usar o site a qualquer momento.</li>
+      <li><strong>Personal/Tutor:</strong> se o plano foi vinculado a um personal, ele também pode excluí-lo pelo painel.</li>
+    </ul>
+  </div>
+
+  <div class="bloco">
+    <h2>6. Segurança</h2>
+    <p>Senhas de personais são guardadas criptografadas. O acesso ao painel exige login. Nenhum sistema é 100% seguro, mas usamos boas práticas de acesso e limitamos a coleta ao mínimo necessário.</p>
+  </div>
+
+  <div class="bloco">
+    <h2>7. Cookies</h2>
+    <p>Usamos apenas cookies de sessão (para manter você logado como personal/admin). Não usamos cookies de publicidade ou rastreamento de terceiros.</p>
+  </div>
+
+  <div class="bloco">
+    <h2>8. Contato do encarregado (DPO)</h2>
+    <p>Dúvidas ou solicitações sobre dados: use a página de <a href="{{ url_for('contato') }}">Contato</a> do site, informando seu nome e o e-mail usado no cadastro do plano.</p>
+  </div>
+
+  <div class="aviso">Este site é educativo: os dados de saúde informados servem apenas para ajustar os exercícios, <strong>não para diagnóstico ou tratamento</strong>.</div>
+
+  <div class="acoes"><a href="{{ url_for('criar') }}" class="btn">Voltar ao formulário</a></div>
+</section>
+{% endblock %}

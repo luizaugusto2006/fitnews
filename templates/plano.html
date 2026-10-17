@@ -21,8 +21,19 @@
     </div>
     <div class="plano-acoes">
       <a href="{{ url_for('editar_plano', plano_id=plano['id']) }}" class="btn">Editar foco / dados</a>
+      <a href="{{ url_for('plano_resumo', plano_id=plano['id']) }}" class="btn btn-fantasma">Resumo 1 página</a>
       <button type="button" class="btn btn-fantasma" onclick="window.print()">Imprimir</button>
     </div>
+  </div>
+
+  <div class="box-share">
+    <div class="share-botoes">
+      <button type="button" class="btn btn-peq" id="btnWhats">Enviar pelo WhatsApp</button>
+      <button type="button" class="btn btn-peq btn-fantasma" id="btnQR">Ver QR Code</button>
+      <button type="button" class="btn btn-peq btn-fantasma" id="btnCopiarLink">Copiar link do plano</button>
+      <span id="linkCopiado" hidden>Link copiado!</span>
+    </div>
+    <div id="qrArea" hidden><div id="qrCodigo"></div><small class="campo-ajuda">Aponte a câmera para abrir o plano no celular.</small></div>
   </div>
 
   <div class="aviso aviso-seguranca">
@@ -72,18 +83,32 @@
           <p>{% for g in dia['grupos'] %}{{ g }}{{ ' · ' if not loop.last }}{% endfor %}</p>
         </header>
         <table class="tabela-ex">
-          <thead><tr><th>Exercício</th><th>Séries</th><th>Reps</th><th>Descanso</th></tr></thead>
+          <thead><tr><th>Exercício</th><th>Séries</th><th>Reps</th><th>Descanso</th><th>Carga</th></tr></thead>
           <tbody>
             {% for e in dia['exercicios'] %}
             <tr>
-              <td><strong>{{ e['nome'] }}</strong><br><small>{{ e['grupo_label'] }} · {{ e['equipamento'].replace('_',' ') }}</small></td>
+              <td>
+                <strong>{{ e['nome'] }}</strong>
+                <button type="button" class="btn-trocar" title="Trocar por outro exercício do mesmo grupo (respeitando suas limitações)"
+                        data-atual="{{ e['nome'] }}" data-grupo="{{ e['grupo'] }}">↻ trocar</button>
+                <br><small>{{ e['grupo_label'] }} · {{ e['equipamento'].replace('_',' ') }}</small>
+              </td>
               <td>{{ e['series'] }}</td>
               <td>{{ e['reps'] }}</td>
-              <td>{{ e['descanso'] }}</td>
+              <td class="td-descanso">{{ e['descanso'] }}
+                <button type="button" class="btn-timer" data-descanso="{{ e['descanso'] }}"
+                        title="Iniciar descanso" hidden>⏱</button>
+              </td>
+              <td><input type="text" class="input-carga" data-ex="{{ e['nome'] }}"
+                         value="{{ e.get('carga','') }}" placeholder="—" maxlength="40"></td>
             </tr>
             {% endfor %}
           </tbody>
         </table>
+        <div class="dia-rodape">
+          <button type="button" class="btn btn-mini" data-salvar-cargas>Salvar cargas</button>
+          <span class="carga-ok" hidden>Salvo ✓</span>
+        </div>
         <p class="dica-dia">Ordem: comece pelo exercício mais difícil. Anote as cargas para progredir a cada semana.</p>
       </article>
       {% endfor %}
@@ -202,8 +227,195 @@
 
   <div class="acoes">
     <a href="{{ url_for('editar_plano', plano_id=plano['id']) }}" class="btn">Alterar foco ou limitações</a>
+    <a href="{{ url_for('plano_resumo', plano_id=plano['id']) }}" class="btn btn-fantasma">Resumo 1 página</a>
     <a href="{{ url_for('criar') }}" class="btn btn-fantasma">Criar outro plano</a>
     <a href="{{ url_for('listar_planos') }}" class="btn btn-fantasma">Meus planos</a>
   </div>
 </section>
+
+<!-- Modal de troca de exercicio -->
+<div class="modal-trocar" id="modalTrocar" hidden>
+  <div class="modal-caixa">
+    <div class="modal-topo">
+      <h3 id="modalTitulo">Trocar exercício</h3>
+      <button type="button" class="modal-fechar" id="modalFechar" aria-label="Fechar">✕</button>
+    </div>
+    <p class="campo-ajuda" id="modalSub">Opções do mesmo grupo, já filtradas pelas suas limitações.</p>
+    <div id="modalLista" class="lista-trocas"></div>
+  </div>
+</div>
+
+<!-- Barra do timer de descanso -->
+<div class="timer-bar" id="timerBar" hidden>
+  <span>Descanso: <strong id="timerNum">0:00</strong></span>
+  <button type="button" class="btn btn-mini" id="timerMais">+15s</button>
+  <button type="button" class="btn btn-mini btn-fantasma" id="timerPular">Pular</button>
+</div>
+
+<form method="post" id="formTrocar" hidden>
+  <input type="hidden" name="atual" id="trocarAtual">
+  <input type="hidden" name="novo" id="trocarNovo">
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/qrcode.min.js') }}"></script>
+<script>
+(function () {
+  "use strict";
+  var planoUrl = {{ plano_url|tojson }};
+  var textoShare = "Olá! Aqui está o meu plano de treino FitNews: ";
+
+  // WhatsApp
+  var bw = document.getElementById("btnWhats");
+  if (bw) bw.addEventListener("click", function () {
+    window.open("https://wa.me/?text=" + encodeURIComponent(textoShare + planoUrl), "_blank");
+  });
+
+  // QR Code (gerado localmente, sem servico externo)
+  var qr = false;
+  var bq = document.getElementById("btnQR");
+  if (bq) bq.addEventListener("click", function () {
+    var area = document.getElementById("qrArea");
+    area.hidden = !area.hidden;
+    if (!area.hidden && !qr && typeof QRCode !== "undefined") {
+      new QRCode(document.getElementById("qrCodigo"),
+                 { text: planoUrl, width: 170, height: 170,
+                   colorDark: "#0d0f0d", colorLight: "#ffffff" });
+      qr = true;
+    }
+  });
+
+  // copiar link
+  var bc = document.getElementById("btnCopiarLink");
+  if (bc) bc.addEventListener("click", function () {
+    function ok() {
+      var s = document.getElementById("linkCopiado");
+      s.hidden = false;
+      setTimeout(function () { s.hidden = true; }, 1600);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(planoUrl).then(ok, ok);
+    } else { ok(); }
+  });
+
+  // ---------- Timer de descanso ----------
+  function parseDescanso(txt) {
+    var m = txt.match(/(\d+)\s*-\s*(\d+)\s*s/); if (m) return parseInt(m[1], 10);
+    m = txt.match(/(\d+)\s*s\b/); if (m) return parseInt(m[1], 10);
+    m = txt.match(/(\d+)\s*min/); if (m) return parseInt(m[1], 10) * 60;
+    return 0;
+  }
+  var barra = document.getElementById("timerBar");
+  var num = document.getElementById("timerNum");
+  var restante = 0, intervalo = null, beepCtx = null;
+
+  function pintar() {
+    var m = Math.floor(restante / 60), s = restante % 60;
+    num.textContent = m + ":" + (s < 10 ? "0" : "") + s;
+  }
+  function beep() {
+    try {
+      beepCtx = beepCtx || new (window.AudioContext || window.webkitAudioContext)();
+      var o = beepCtx.createOscillator(), g = beepCtx.createGain();
+      o.connect(g); g.connect(beepCtx.destination);
+      o.frequency.value = 880; g.gain.value = 0.15;
+      o.start();
+      g.gain.exponentialRampToValueAtTime(0.001, beepCtx.currentTime + 0.9);
+      o.stop(beepCtx.currentTime + 0.9);
+    } catch (e) {}
+  }
+  function parar() {
+    if (intervalo) clearInterval(intervalo);
+    intervalo = null; barra.hidden = true;
+  }
+  function iniciar(seg) {
+    restante = seg;
+    barra.hidden = false;
+    pintar();
+    if (intervalo) clearInterval(intervalo);
+    intervalo = setInterval(function () {
+      restante--;
+      pintar();
+      if (restante <= 0) {
+        parar();
+        beep();
+        alert("Descanso finalizado! Volte ao treino.");
+      }
+    }, 1000);
+  }
+  document.querySelectorAll(".btn-timer").forEach(function (b) {
+    var seg = parseDescanso(b.dataset.descanso || "");
+    if (seg > 0) b.hidden = false;
+    b.addEventListener("click", function () { if (seg > 0) iniciar(seg); });
+  });
+  var tm = document.getElementById("timerMais");
+  if (tm) tm.addEventListener("click", function () { restante += 15; pintar(); });
+  var tp = document.getElementById("timerPular");
+  if (tp) tp.addEventListener("click", parar);
+
+  // ---------- Cargas ----------
+  document.querySelectorAll("[data-salvar-cargas]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var artigo = btn.closest(".dia");
+      var itens = [];
+      artigo.querySelectorAll(".input-carga").forEach(function (i) {
+        itens.push({ nome: i.dataset.ex, carga: i.value.trim() });
+      });
+      fetch({{ ('/plano/' ~ plano['id'] ~ '/cargas')|tojson }}, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ itens: itens })
+      }).then(function (r) { return r.json(); }).then(function () {
+        var ok = artigo.querySelector(".carga-ok");
+        if (ok) { ok.hidden = false; setTimeout(function () { ok.hidden = true; }, 1800); }
+      });
+    });
+  });
+
+  // ---------- Trocar exercicio ----------
+  var modal = document.getElementById("modalTrocar");
+  var lista = document.getElementById("modalLista");
+  var atualSel = "", grupoSel = "";
+
+  document.querySelectorAll(".btn-trocar").forEach(function (b) {
+    b.addEventListener("click", function () {
+      atualSel = b.dataset.atual;
+      grupoSel = b.dataset.grupo;
+      document.getElementById("modalTitulo").textContent = "Trocar: " + atualSel;
+      lista.innerHTML = "<p>Carregando opções…</p>";
+      modal.hidden = false;
+      fetch({{ ('/plano/' ~ plano['id'] ~ '/alternativas')|tojson }} +
+            "?grupo=" + encodeURIComponent(grupoSel))
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          lista.innerHTML = "";
+          if (!d.alternativas.length) {
+            lista.innerHTML = "<p class='campo-ajuda'>Nenhuma alternativa disponível para as suas limitações neste grupo.</p>";
+            return;
+          }
+          d.alternativas.forEach(function (alt) {
+            var bnt = document.createElement("button");
+            bnt.type = "button";
+            bnt.className = "item-troca";
+            bnt.innerHTML = "<strong>" + alt.nome + "</strong><small>" +
+              alt.equipamento + " · " + alt.nivel + "</small>";
+            bnt.addEventListener("click", function () {
+              document.getElementById("trocarAtual").value = atualSel;
+              document.getElementById("trocarNovo").value = alt.nome;
+              document.getElementById("formTrocar").action =
+                {{ ('/plano/' ~ plano['id'] ~ '/trocar')|tojson }};
+              document.getElementById("formTrocar").submit();
+            });
+            lista.appendChild(bnt);
+          });
+        })
+        .catch(function () { lista.innerHTML = "<p>Erro ao carregar. Tente novamente.</p>"; });
+    });
+  });
+  function fecharModal() { modal.hidden = true; }
+  document.getElementById("modalFechar").addEventListener("click", fecharModal);
+  modal.addEventListener("click", function (ev) { if (ev.target === modal) fecharModal(); });
+})();
+</script>
 {% endblock %}

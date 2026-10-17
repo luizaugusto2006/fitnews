@@ -222,6 +222,70 @@ input[readonly] { color: var(--acento); font-weight: 700; }
 .anotacoes textarea { width: 100%; }
 .anotacoes h2 small { font-size: .95rem; font-weight: 600; }
 
+/* ---------- compartilhar (WhatsApp / QR / link) ---------- */
+.box-share { display: flex; gap: 1.4rem; align-items: center; flex-wrap: wrap; margin: 1rem 0 0; }
+.share-botoes { display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; }
+#linkCopiado { color: var(--ok); font-weight: 700; font-size: .88rem; }
+#qrArea { background: #fff; padding: .7rem; border-radius: 12px; text-align: center; display: flex; flex-direction: column; gap: .3rem; align-items: center; }
+#qrArea small { color: #333; }
+
+/* ---------- troca de exercicio + cargas + timer ---------- */
+.btn-trocar {
+  background: none; border: 1px dashed var(--borda); color: var(--texto2);
+  font-size: .7rem; padding: .1rem .45rem; border-radius: 6px; cursor: pointer;
+  margin-left: .35rem; vertical-align: middle;
+}
+.btn-trocar:hover { border-color: var(--acento); color: var(--acento); }
+.btn-timer {
+  background: rgba(198,255,47,.14); border: 1px solid rgba(198,255,47,.5); color: var(--acento);
+  border-radius: 8px; cursor: pointer; font-size: .85rem; padding: .1rem .4rem; margin-left: .35rem;
+}
+.btn-timer:hover { background: var(--acento); color: #10130f; }
+.input-carga {
+  width: 70px; background: var(--fundo2); border: 1px solid var(--borda); color: var(--texto);
+  border-radius: 8px; padding: .3rem .45rem; font-size: .88rem; text-align: center;
+}
+.input-carga:focus { outline: 2px solid var(--acento); }
+.dia-rodape { display: flex; gap: .7rem; align-items: center; padding: .5rem 1.2rem 0; }
+.carga-ok { color: var(--ok); font-weight: 700; font-size: .82rem; }
+
+.timer-bar {
+  position: fixed; bottom: 1rem; left: 50%; transform: translateX(-50%);
+  background: var(--acento); color: #10130f; font-weight: 800;
+  padding: .7rem 1.2rem; border-radius: 999px; display: flex; gap: .8rem; align-items: center;
+  z-index: 90; box-shadow: 0 8px 30px rgba(0,0,0,.5); font-size: 1.05rem;
+}
+.timer-bar .btn { background: #10130f; color: var(--acento); border-color: #10130f; }
+.timer-bar .btn-fantasma { background: transparent; border-color: #10130f; color: #10130f; }
+
+.modal-trocar {
+  position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 100;
+  display: flex; align-items: center; justify-content: center; padding: 1rem;
+}
+.modal-caixa {
+  background: var(--fundo2); border: 1px solid var(--borda); border-radius: var(--raio);
+  width: min(560px, 100%); max-height: 82vh; overflow: auto; padding: 1.3rem;
+}
+.modal-topo { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+.modal-topo h3 { color: var(--acento); margin: 0; }
+.modal-fechar { background: none; border: none; color: var(--texto2); font-size: 1.3rem; cursor: pointer; }
+.modal-fechar:hover { color: var(--texto); }
+.lista-trocas { display: flex; flex-direction: column; gap: .55rem; margin-top: .8rem; }
+.item-troca {
+  text-align: left; background: var(--card); border: 1px solid var(--borda); color: var(--texto);
+  border-radius: 10px; padding: .7rem .9rem; cursor: pointer; display: flex;
+  flex-direction: column; gap: .15rem; font-size: .95rem;
+}
+.item-troca:hover { border-color: var(--acento); }
+.item-troca small { color: var(--texto2); font-size: .78rem; }
+
+.busca-filtros { flex-wrap: wrap; }
+.busca-filtros select {
+  width: auto; min-width: 170px; background: var(--card); border: 1px solid var(--borda);
+  color: var(--texto); border-radius: 10px; padding: .6rem .7rem; font-size: .92rem;
+}
+.busca-filtros input[type="search"] { flex: 1; min-width: 200px; }
+
 /* ---------- rodape ---------- */
 .rodape { border-top: 1px solid var(--borda); background: var(--fundo2); margin-top: 3rem; padding: 2rem 0; }
 .rodape p { color: var(--texto2); font-size: .9rem; }

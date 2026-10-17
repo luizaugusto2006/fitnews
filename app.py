@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """FitNews - site de academia: gerador de treino, alimentacao e suplementos."""
+import csv
+import io
 import json
 import os
 import secrets
@@ -7,14 +9,14 @@ import string
 import sqlite3
 from datetime import date
 
-from flask import (Flask, abort, flash, redirect, render_template, request,
-                   session, url_for)
+from flask import (Flask, Response, abort, flash, jsonify, redirect,
+                   render_template, request, session, url_for)
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from data_content import LIMITATION_LABELS
 from database import get_db, init_db
 from gerador import (ATIVIDADE_LABELS, FOCOS, FOCO_LABELS, LIMITACOES,
-                     LIMIT_LABELS, gerar_plano)
+                     LIMIT_LABELS, banco_exercicios, gerar_plano)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "fitnews-dev-key-troque-em-producao")
@@ -87,6 +89,8 @@ def ler_formulario(form):
         erros.append("Selecione pelo menos um foco/objetivo.")
     if form.get("aceite") != "sim":
         erros.append("É preciso aceitar o aviso de segurança para gerar o plano.")
+    if form.get("aceite_privacidade") != "sim":
+        erros.append("É preciso aceitar a Política de Privacidade para gerar o plano.")
     return dados, erros
 
 
@@ -177,7 +181,106 @@ def ver_plano(plano_id):
         sou_dono = session.get("personal_id") == plano["personal_id"]
     return render_template("plano.html", plano=plano, FOCO_LABELS=FOCO_LABELS,
                            LIMIT_LABELS=LIMIT_LABELS, date=date,
-                           personal_nome=personal_nome, sou_dono=sou_dono)
+                           personal_nome=personal_nome, sou_dono=sou_dono,
+                           plano_url=url_for("ver_plano", plano_id=plano_id,
+                                             _external=True))
+
+
+@app.route("/plano/<int:plano_id>/resumo")
+def plano_resumo(plano_id):
+    plano = _carregar_plano(plano_id)
+    return render_template("resumo.html", plano=plano, FOCO_LABELS=FOCO_LABELS,
+                           LIMIT_LABELS=LIMIT_LABELS)
+
+
+@app.route("/plano/<int:plano_id>/alternativas")
+def plano_alternativas(plano_id):
+    """Exercicios permitidos do mesmo grupo (ja filtrados pelas limitacoes)."""
+    plano = _carregar_plano(plano_id)
+    grupo = request.args.get("grupo", "")
+    limitacoes = [l for l in plano["limitacoes_lista"] if l != "nenhuma"]
+    permitidos, _ = banco_exercicios(limitacoes, plano["nivel_treino"], plano["local"])
+    if not any(e["grupo"] == grupo for e in permitidos):
+        permitidos, _ = banco_exercicios(limitacoes, None, plano["local"])
+    usados = set()
+    for dia in plano["dados"].get("dias", []):
+        for e in dia.get("exercicios", []):
+            usados.add(e["nome"])
+    alts = [{"nome": e["nome"], "equipamento": e["equipamento"].replace("_", " "),
+             "nivel": e["nivel"]}
+            for e in permitidos if e["grupo"] == grupo and e["nome"] not in usados]
+    return jsonify({"alternativas": alts[:12], "grupo": grupo})
+
+
+def _salvar_dados(plano_id, dados):
+    conn = get_db()
+    conn.execute("UPDATE planos SET dados_json=? WHERE id=?",
+                 (json.dumps(dados, ensure_ascii=False), plano_id))
+    conn.commit()
+    conn.close()
+
+
+@app.route("/plano/<int:plano_id>/trocar", methods=["POST"])
+def plano_trocar(plano_id):
+    plano = _carregar_plano(plano_id)
+    dados = plano["dados"]
+    atual, novo = request.form.get("atual", ""), request.form.get("novo", "")
+    alvo = None
+    for dia in dados.get("dias", []):
+        for e in dia.get("exercicios", []):
+            if e["nome"] == atual:
+                alvo = e
+    if not alvo:
+        flash("Exercício original não encontrado no plano.", "erro")
+        return redirect(url_for("ver_plano", plano_id=plano_id))
+    # valida o novo exercicio: existe, mesmo grupo e permitido para as limitacoes
+    limitacoes = [l for l in plano["limitacoes_lista"] if l != "nenhuma"]
+    permitidos, _ = banco_exercicios(limitacoes, plano["nivel_treino"], plano["local"])
+    if not any(e["nome"] == novo and e["grupo"] == alvo["grupo"] for e in permitidos):
+        permitidos, _ = banco_exercicios(limitacoes, None, plano["local"])
+    escolhido = next((e for e in permitidos
+                      if e["nome"] == novo and e["grupo"] == alvo["grupo"]), None)
+    if not escolhido:
+        flash("Esse exercício não está disponível para as suas limitações.", "erro")
+        return redirect(url_for("ver_plano", plano_id=plano_id))
+    usados = {e["nome"] for dia in dados.get("dias", [])
+              for e in dia.get("exercicios", [])}
+    if novo in usados and novo != atual:
+        flash("Esse exercício já está no seu plano.", "erro")
+        return redirect(url_for("ver_plano", plano_id=plano_id))
+    alvo["nome"] = escolhido["nome"]
+    alvo["equipamento"] = escolhido["equipamento"]
+    alvo["nivel"] = escolhido["nivel"]
+    alvo.pop("carga", None)
+    _salvar_dados(plano_id, dados)
+    flash(f"Exercício trocado por: {novo}.", "ok")
+    return redirect(url_for("ver_plano", plano_id=plano_id))
+
+
+@app.route("/plano/<int:plano_id>/cargas", methods=["POST"])
+def plano_cargas(plano_id):
+    plano = _carregar_plano(plano_id)
+    dados = plano["dados"]
+    payload = request.get_json(silent=True) or {}
+    itens = payload.get("itens", [])
+    nomes = {e["nome"] for dia in dados.get("dias", [])
+             for e in dia.get("exercicios", [])}
+    alterados = 0
+    for item in itens:
+        nome = str(item.get("nome", ""))[:120]
+        carga = str(item.get("carga", ""))[:40]
+        if nome not in nomes:
+            continue
+        for dia in dados.get("dias", []):
+            for e in dia.get("exercicios", []):
+                if e["nome"] == nome:
+                    if carga:
+                        e["carga"] = carga
+                    else:
+                        e.pop("carga", None)
+                    alterados += 1
+    _salvar_dados(plano_id, dados)
+    return jsonify({"ok": True, "alterados": alterados})
 
 
 @app.route("/planos")
@@ -236,7 +339,7 @@ def editar_plano(plano_id):
         "nivel_treino": d["nivel_treino"], "dias": d["dias"], "horario": d["horario"],
         "local": d["local"], "limitacoes": plano["limitacoes_lista"],
         "focos": plano["focos_lista"], "observacoes": d["observacoes"],
-        "aceite": "sim",
+        "aceite": "sim", "aceite_privacidade": "sim",
     }
     return render_template("criar.html", dados=dados, focos=FOCOS,
                            limitacoes=LIMITACOES, niveis=NIVEIS,
@@ -252,6 +355,11 @@ def sobre():
 @app.route("/contato")
 def contato():
     return render_template("contato.html")
+
+
+@app.route("/privacidade")
+def privacidade():
+    return render_template("privacidade.html")
 
 
 # ------------------------------------------------------------------
@@ -338,6 +446,8 @@ def personal_painel():
     if not eu:
         return redirect(url_for("personal"))
     q = (request.args.get("q", "") or "").strip()
+    foco = request.args.get("foco", "") or ""
+    lim = request.args.get("lim", "") or ""
     conn = get_db()
     sql = ("SELECT id, nome, idade, focos, limitacoes, criado_em FROM planos"
            " WHERE personal_id=?")
@@ -345,6 +455,12 @@ def personal_painel():
     if q:
         sql += " AND nome LIKE ?"
         params.append(f"%{q}%")
+    if foco:
+        sql += " AND focos LIKE ?"
+        params.append(f"%{foco}%")
+    if lim:
+        sql += " AND limitacoes LIKE ?"
+        params.append(f"%{lim}%")
     sql += " ORDER BY id DESC"
     meus = [dict(r) for r in conn.execute(sql, params).fetchall()]
 
@@ -353,6 +469,12 @@ def personal_painel():
     if q:
         sql2 += " AND nome LIKE ?"
         params2.append(f"%{q}%")
+    if foco:
+        sql2 += " AND focos LIKE ?"
+        params2.append(f"%{foco}%")
+    if lim:
+        sql2 += " AND limitacoes LIKE ?"
+        params2.append(f"%{lim}%")
     sql2 += " ORDER BY id DESC LIMIT 50"
     sem_vinculo = [dict(r) for r in conn.execute(sql2, params2).fetchall()]
 
@@ -362,9 +484,10 @@ def personal_painel():
     n_planos = len(meus)
     conn.close()
     return render_template("personal_painel.html", eu=eu, meus=meus,
-                           sem_vinculo=sem_vinculo, q=q,
+                           sem_vinculo=sem_vinculo, q=q, foco=foco, lim=lim,
                            n_clientes=n_clientes, n_planos=n_planos,
-                           FOCO_LABELS=FOCO_LABELS, LIMIT_LABELS=LIMIT_LABELS)
+                           FOCO_LABELS=FOCO_LABELS, LIMIT_LABELS=LIMIT_LABELS,
+                           FOCOS=FOCOS, LIMITACOES=LIMITACOES)
 
 
 @app.route("/personal/novo")
@@ -454,6 +577,52 @@ def admin_painel():
                           " LIMIT 20").fetchall()
     conn.close()
     return render_template("admin_painel.html", n_ex=n_ex, n_pl=n_pl, planos=planos)
+
+
+def _csv_response(nome_arquivo, cabecalho, linhas):
+    buf = io.StringIO()
+    escritor = csv.writer(buf)
+    escritor.writerow(cabecalho)
+    escritor.writerows(linhas)
+    dados = "\ufeff" + buf.getvalue()  # BOM para o Excel abrir em UTF-8
+    return Response(dados, mimetype="text/csv; charset=utf-8", headers={
+        "Content-Disposition": f"attachment; filename={nome_arquivo}"})
+
+
+@app.route("/admin/exportar/planos")
+def admin_exportar_planos():
+    if not admin_requerido():
+        return redirect(url_for("admin_login"))
+    conn = get_db()
+    rows = conn.execute(
+        "SELECT id, nome, sexo, idade, email, telefone, peso, altura, imc,"
+        " atividade, nivel_treino, dias, local, limitacoes, focos, criado_em"
+        " FROM planos ORDER BY id").fetchall()
+    conn.close()
+    linhas = [[r["id"], r["nome"], r["sexo"], r["idade"], r["email"], r["telefone"],
+               r["peso"], r["altura"], r["imc"], r["atividade"], r["nivel_treino"],
+               r["dias"], r["local"], r["limitacoes"], r["focos"], r["criado_em"]]
+              for r in rows]
+    return _csv_response("fitnews_planos.csv",
+                         ["id", "nome", "sexo", "idade", "email", "telefone", "peso",
+                          "altura", "imc", "atividade", "nivel", "dias", "local",
+                          "limitacoes", "focos", "criado_em"], linhas)
+
+
+@app.route("/admin/exportar/exercicios")
+def admin_exportar_exercicios():
+    if not admin_requerido():
+        return redirect(url_for("admin_login"))
+    conn = get_db()
+    rows = conn.execute(
+        "SELECT id, nome, grupo, equipamento, nivel, contraindicado_para"
+        " FROM exercicios ORDER BY grupo, nome").fetchall()
+    conn.close()
+    linhas = [[r["id"], r["nome"], r["grupo"], r["equipamento"], r["nivel"],
+               r["contraindicado_para"]] for r in rows]
+    return _csv_response("fitnews_exercicios.csv",
+                         ["id", "nome", "grupo", "equipamento", "nivel",
+                          "contraindicado_para"], linhas)
 
 
 @app.route("/admin/exercicios")

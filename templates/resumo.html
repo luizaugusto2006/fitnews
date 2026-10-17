@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Resumo do treino — {{ plano['nome'] }} — FitNews</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+    /* resumo enxuto, pensado para caber em ~1 pagina impressa */
+    .resumo { padding: 1.2rem 0 3rem; }
+    .resumo-cab { display: flex; justify-content: space-between; align-items: baseline;
+                  border-bottom: 2px solid var(--acento); padding-bottom: .5rem; flex-wrap: wrap; }
+    .resumo-cab h1 { font-size: 1.4rem; margin: 0; }
+    .resumo-cab .logo { font-size: 1rem; }
+    .resumo-dados { font-size: .85rem; color: var(--texto2); margin: .5rem 0; }
+    .resumo h2 { font-size: .95rem; color: var(--acento); text-transform: uppercase;
+                 letter-spacing: 1px; margin: 1rem 0 .4rem; }
+    .resumo table { width: 100%; border-collapse: collapse; font-size: .8rem; }
+    .resumo th, .resumo td { border: 1px solid var(--borda); padding: .3rem .5rem; text-align: left; }
+    .resumo th { background: var(--fundo2); }
+    .resumo .duas { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
+    .resumo ul { font-size: .8rem; margin: .2rem 0; padding-left: 1.1rem; columns: 2; }
+    .resumo .mini { font-size: .78rem; color: var(--texto2); }
+    .resumo .macro-linha { font-size: .85rem; font-weight: 700; }
+    .no-print { margin-top: 1.2rem; display: flex; gap: .7rem; flex-wrap: wrap; }
+    @media print {
+      body { background: #fff; color: #000; }
+      .topo, .rodape, .no-print { display: none !important; }
+      .resumo th { background: #eee; color: #000; }
+      .resumo th, .resumo td { border-color: #999; }
+      .resumo h2 { color: #333; }
+      .resumo-dados, .resumo .mini { color: #333; }
+      .resumo-cab { border-color: #000; }
+      a { color: #000; }
+      .resumo table, .resumo ul, .resumo h2 { page-break-inside: avoid; }
+    }
+    @media (max-width: 640px) { .resumo .duas { grid-template-columns: 1fr; } .resumo ul { columns: 1; } }
+  </style>
+</head>
+<body>
+<main class="container resumo">
+  <div class="resumo-cab">
+    <h1>Resumo do treino — {{ plano['nome'] }}</h1>
+    <span class="logo">FIT<span style="color:var(--acento)">NEWS</span></span>
+  </div>
+
+  <p class="resumo-dados">
+    {{ plano['idade'] }} anos · Sexo: {{ plano['sexo'] or 'não informado' }} ·
+    {% if plano['peso'] %}{{ plano['peso']|round(1) }} kg · {% endif %}
+    {% if plano['altura'] %}{{ plano['altura']|round(0) }} cm · {% endif %}
+    {% if plano['imc'] %}IMC {{ plano['imc'] }} · {% endif %}
+    {{ plano['dias'] }} dias/semana · {{ 'Academia' if plano['local']=='academia' else 'Casa' }} ·
+    Nível {{ plano['nivel_treino'] }} · Plano #{{ plano['id'] }}
+  </p>
+
+  <p class="tags" style="margin:.3rem 0">
+    {% for f in plano['dados']['focos_rotulos'] %}<span class="tag tag-foco">{{ f }}</span> {% endfor %}
+    {% for l in plano['dados']['limitacoes_rotulos'] %}<span class="tag tag-limite">{{ l }}</span> {% endfor %}
+  </p>
+
+  <div class="aviso aviso-seguranca" style="font-size:.75rem;padding:.5rem .8rem">
+    {{ plano['dados']['aviso'] }}
+  </div>
+
+  <h2>Treino da semana</h2>
+  {% for dia in plano['dados']['dias'] %}
+  <p class="mini" style="margin:.5rem 0 .2rem"><strong>{{ dia['titulo'] }}</strong> — {{ dia['grupos']|join(' · ') }}</p>
+  <table>
+    <thead><tr><th style="width:44%">Exercício</th><th>Séries</th><th>Reps</th><th>Descanso</th><th>Carga</th></tr></thead>
+    <tbody>
+      {% for e in dia['exercicios'] %}
+      <tr>
+        <td>{{ e['nome'] }}</td>
+        <td>{{ e['series'] }}</td>
+        <td>{{ e['reps'] }}</td>
+        <td>{{ e['descanso'] }}</td>
+        <td>{{ e.get('carga','') }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endfor %}
+
+  <div class="duas">
+    <div>
+      <h2>Aquecimento (antes)</h2>
+      <ul>{% for a in plano['dados']['aquecimento'] %}<li>{{ a }}</li>{% endfor %}</ul>
+    </div>
+    <div>
+      <h2>Alongamento pós-treino</h2>
+      <ul>
+        {% for dia in plano['dados']['dias'] %}{% for s in dia['alongamento_pos'] %}
+        <li>{{ s['nome'] }} ({{ s['tempo'] }})</li>
+        {% endfor %}{% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <h2>Alimentação (faixa {{ plano['dados']['nutricao']['faixa'] }})</h2>
+  <p class="macro-linha">
+    {{ plano['dados']['nutricao']['tdee'] }} kcal · Proteína {{ plano['dados']['nutricao']['proteina'] }}g ·
+    Carboidrato {{ plano['dados']['nutricao']['carboidrato'] }}g · Gordura {{ plano['dados']['nutricao']['gordura'] }}g ·
+    Água ~{{ plano['dados']['nutricao']['agua_l'] }}L
+  </p>
+
+  <h2>Suplementos sugeridos</h2>
+  <p class="mini">
+    {% for s in plano['dados']['suplementos']['itens'] %}{{ s['nome'] }} ({{ s['dose'] }}){{ ' · ' if not loop.last }}{% else %}nenhum necessário — foco na alimentação{% endfor %}
+  </p>
+
+  <div class="no-print">
+    <button class="btn" type="button" onclick="window.print()">Imprimir / salvar PDF</button>
+    <a class="btn btn-fantasma" href="{{ url_for('ver_plano', plano_id=plano['id']) }}">← Voltar ao plano completo</a>
+  </div>
+</main>
+</body>
+</html>
