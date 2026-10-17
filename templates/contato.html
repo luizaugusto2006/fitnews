@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Contato — FitNews{% endblock %}
+{% block content %}
+<section class="container pagina-form">
+  <h1>Fale com a FitNews</h1>
+  <p class="sub">Dúvidas sobre o treino, parcerias ou sugestões de melhorias no site.</p>
+
+  <div class="grade grade-2">
+    <div class="card">
+      <h3>Contato</h3>
+      <ul class="lista">
+        <li><strong>Site:</strong> fitnews.pythonanywhere.com</li>
+        <li><strong>E-mail:</strong> contato@fitnews.com.br</li>
+        <li><strong>WhatsApp:</strong> (00) 00000-0000</li>
+        <li><strong>Instagram:</strong> @fitnews</li>
+      </ul>
+      <p class="campo-ajuda">Substitua estes dados pelos seus canais reais em <code>templates/contato.html</code>.</p>
+    </div>
+    <div class="card">
+      <h3>Orientação profissional</h3>
+      <p>Antes de iniciar qualquer programa de exercícios, faça avaliação médica — principalmente se você tem hérnia de disco, bico de papagaio, problemas de joelho, pressão alta ou condição cardíaca.</p>
+      <a href="{{ url_for('criar') }}" class="btn">Gerar meu plano</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Admin — FitNews{% endblock %}
+{% block content %}
+<section class="container pagina-form" style="max-width:420px">
+  <h1>Painel administrativo</h1>
+  <p class="sub">Entre para gerenciar exercícios e planos.</p>
+  <form method="post" class="formulario">
+    <label class="campo"><span>Usuário</span><input type="text" name="usuario" required autocomplete="username"></label>
+    <label class="campo"><span>Senha</span><input type="password" name="senha" required autocomplete="current-password"></label>
+    <button class="btn btn-grande" type="submit">Entrar</button>
+  </form>
+  <p class="campo-ajuda">Padrão: <code>admin</code> / <code>fitnews2026</code> — altere com as variáveis de ambiente <code>ADMIN_USER</code> e <code>ADMIN_PASSWORD</code>.</p>
+</section>
+{% endblock %}

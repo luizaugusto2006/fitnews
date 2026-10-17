@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+{% block title %}Plano de {{ plano['nome'] }} — FitNews{% endblock %}
+{% block content %}
+<section class="container pagina-plano">
+  <div class="plano-topo">
+    <div>
+      <p class="selo">PLANO DE TREINO #{{ plano['id'] }}</p>
+      <h1>Olá, {{ plano['nome'] }}!</h1>
+      <p class="sub">
+        {{ plano['idade'] }} anos ·
+        {% if plano['imc'] %}IMC {{ plano['imc'] }} · {% endif %}
+        {{ plano['dias'] }} dias/semana ·
+        {{ 'Academia' if plano['local']=='academia' else 'Treino em casa' }} ·
+        Nível {{ plano['nivel_treino'] }}
+      </p>
+      <p class="tags">
+        {% for f in plano['dados']['focos_rotulos'] %}<span class="tag tag-foco">{{ f }}</span>{% endfor %}
+        {% for l in plano['dados']['limitacoes_rotulos'] %}<span class="tag tag-limite">{{ l }}</span>{% endfor %}
+      </p>
+    </div>
+    <div class="plano-acoes">
+      <a href="{{ url_for('editar_plano', plano_id=plano['id']) }}" class="btn">Editar foco / dados</a>
+      <button type="button" class="btn btn-fantasma" onclick="window.print()">Imprimir</button>
+    </div>
+  </div>
+
+  <div class="aviso aviso-seguranca">
+    <strong>Aviso de segurança:</strong> {{ plano['dados']['aviso'] }}
+  </div>
+
+  {% if plano['dados']['evitados'] %}
+  <details class="evitados">
+    <summary>Exercícios bloqueados pelas suas limitações ({{ plano['dados']['evitados']|length }})</summary>
+    <p class="campo-ajuda">Estes exercícios <strong>não aparecem</strong> no seu plano porque poderiam causar dano:</p>
+    <div class="pills">
+      {% for e in plano['dados']['evitados'] %}<span class="pill pill-bloqueado"><span>{{ e }}</span></span>{% endfor %}
+    </div>
+  </details>
+  {% endif %}
+
+  <div class="abas" role="tablist">
+    <button class="aba ativa" data-aba="treino">Treino</button>
+    <button class="aba" data-aba="aquecimento">Aquecimento &amp; Alongamento</button>
+    <button class="aba" data-aba="alimentacao">Alimentação</button>
+    <button class="aba" data-aba="suplementos">Suplementos</button>
+  </div>
+
+  <!-- ============ TREINO ============ -->
+  <div class="painel ativo" id="aba-treino">
+    <div class="grade grade-dias">
+      {% for dia in plano['dados']['dias'] %}
+      <article class="dia">
+        <header class="dia-topo">
+          <h2>{{ dia['titulo'] }}</h2>
+          <p>{% for g in dia['grupos'] %}{{ g }}{{ ' · ' if not loop.last }}{% endfor %}</p>
+        </header>
+        <table class="tabela-ex">
+          <thead><tr><th>Exercício</th><th>Séries</th><th>Reps</th><th>Descanso</th></tr></thead>
+          <tbody>
+            {% for e in dia['exercicios'] %}
+            <tr>
+              <td><strong>{{ e['nome'] }}</strong><br><small>{{ e['grupo_label'] }} · {{ e['equipamento'].replace('_',' ') }}</small></td>
+              <td>{{ e['series'] }}</td>
+              <td>{{ e['reps'] }}</td>
+              <td>{{ e['descanso'] }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <p class="dica-dia">Ordem: comece pelo exercício mais difícil. Anote as cargas para progredir a cada semana.</p>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- ============ AQUECIMENTO / ALONGAMENTO ============ -->
+  <div class="painel" id="aba-aquecimento">
+    <section class="bloco">
+      <h2>Aquecimento geral (faça antes de todo treino — 5 a 8 min)</h2>
+      <ol class="lista">
+        {% for item in plano['dados']['aquecimento'] %}<li>{{ item }}</li>{% endfor %}
+      </ol>
+    </section>
+
+    {% for dia in plano['dados']['dias'] %}
+    <section class="bloco">
+      <h2>{{ dia['titulo'] }} — ativação específica (2 min)</h2>
+      <ul class="lista-pontos">
+        {% for a in dia['ativacao'] %}<li>{{ a }}</li>{% endfor %}
+      </ul>
+    </section>
+    {% endfor %}
+
+    <section class="bloco">
+      <h2>Alongamento dinâmico pré-treino</h2>
+      <p class="campo-ajuda">Movimentos curtos e controlados, <strong>sem segurar posição</strong>: rotações de ombro, de quadril, elevação de joelhos e gato camelo suave. 30 a 60 segundos cada.</p>
+      <ul class="lista-pontos">
+        {% for item in plano['dados']['alongamento_pre'] %}<li>{{ item }}</li>{% endfor %}
+      </ul>
+    </section>
+
+    <section class="bloco">
+      <h2>Alongamento pós-treino (segure 20-30 s cada, sem rebotes)</h2>
+      {% for dia in plano['dados']['dias'] %}
+      <h3>{{ dia['titulo'] }} — {% for g in dia['grupos'] %}{{ g }}{{ ' · ' if not loop.last }}{% endfor %}</h3>
+      {% if dia['alongamento_pos'] %}
+      <div class="grade grade-2">
+        {% for s in dia['alongamento_pos'] %}
+        <div class="along-card">
+          <strong>{{ s['nome'] }}</strong>
+          <p>{{ s['como'] }}</p>
+          <small>{{ s['tempo'] }} · {{ s['grupo'] }}</small>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}<p class="campo-ajuda">Alongamentos padrão do aquecimento geral.</p>{% endif %}
+      {% endfor %}
+      <div class="aviso">Respire fundo durante todo o alongamento. Dor aguda = pare imediatamente.</div>
+    </section>
+  </div>
+
+  <!-- ============ ALIMENTAÇÃO ============ -->
+  <div class="painel" id="aba-alimentacao">
+    {% set n = plano['dados']['nutricao'] %}
+    <section class="bloco">
+      <h2>Alimentação sugerida — faixa de idade {{ n['faixa'] }}</h2>
+      <p>{{ n['resumo'] }}</p>
+      <div class="grade grade-4 macros">
+        <div class="macro"><span>Calorias diárias</span><strong>{{ n['tdee'] }} kcal</strong></div>
+        <div class="macro"><span>Proteína</span><strong>{{ n['proteina'] }} g</strong></div>
+        <div class="macro"><span>Carboidrato</span><strong>{{ n['carboidrato'] }} g</strong></div>
+        <div class="macro"><span>Gordura</span><strong>{{ n['gordura'] }} g</strong></div>
+      </div>
+      <p class="dica"><strong>Ajuste ao seu objetivo:</strong> {{ n['ajuste'] }}<br>
+      <strong>Base do cálculo:</strong> {{ n['metodo'] }}.<br>
+      <strong>Água:</strong> cerca de {{ n['agua_l'] }} litros por dia ({{ n['agua'] }}).</p>
+    </section>
+
+    <section class="bloco">
+      <h2>Modelo de refeições do dia</h2>
+      <table class="tabela-refeicoes">
+        <tbody>
+          {% for hora, item in n['refeicoes'] %}
+          <tr><th>{{ hora }}</th><td>{{ item }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <div class="aviso aviso-ok"><strong>Atenção:</strong> {{ n['atencao'] }}</div>
+    </section>
+
+    <section class="bloco">
+      <h2>Hábitos que potencializam o resultado</h2>
+      <ul class="lista">
+        <li>Mastigue bem e evite comer com pressa — a saciedade leva ~20 minutos.</li>
+        <li>Reduza ultraprocessados, açúcar adicionado e bebidas alcoólicas.</li>
+        <li>Coma uma fonte de proteína em cada refeição principal.</li>
+        <li>Não pule refeições para "compensar" treinos pesados.</li>
+        <li>Durma de 7 a 8 horas — o músculo cresce no descanso.</li>
+      </ul>
+    </section>
+  </div>
+
+  <!-- ============ SUPLEMENTOS ============ -->
+  <div class="painel" id="aba-suplementos">
+    {% set s = plano['dados']['suplementos'] %}
+    <section class="bloco">
+      <h2>Suplementos sugeridos — idade {{ s['faixa'] }} · foco e limitações considerados</h2>
+      {% if s['itens'] %}
+      <table class="tabela-ex">
+        <thead><tr><th>Suplemento</th><th>Dosagem indicativa</th><th>Observações</th></tr></thead>
+        <tbody>
+          {% for i in s['itens'] %}
+          <tr><td><strong>{{ i['nome'] }}</strong></td><td>{{ i['dose'] }}</td><td><small>{{ i['obs'] }}</small></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}<p>Nenhum suplemento é necessário para o seu perfil — foque na alimentação.</p>{% endif %}
+      <div class="aviso">
+        <strong>Importante:</strong> suplementos são <strong>complementos</strong>, não substituem refeições.
+        Não os utilize sem orientação se você toma medicamentos, é gestante ou tem condição clínica.
+        Procure um nutricionista para um plano individualizado.
+      </div>
+    </section>
+  </div>
+
+  <div class="acoes">
+    <a href="{{ url_for('editar_plano', plano_id=plano['id']) }}" class="btn">Alterar foco ou limitações</a>
+    <a href="{{ url_for('criar') }}" class="btn btn-fantasma">Criar outro plano</a>
+    <a href="{{ url_for('listar_planos') }}" class="btn btn-fantasma">Meus planos</a>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Exercícios — FitNews Admin{% endblock %}
+{% block content %}
+<section class="container pagina-form">
+  <div class="plano-topo">
+    <div>
+      <h1>Base de exercícios</h1>
+      <p class="sub">{{ itens|length }} exercício(s) · bloqueie exercícios por limitação marcando os códigos.</p>
+    </div>
+    <div class="plano-acoes">
+      <a href="{{ url_for('admin_exercicio_editar', ex_id=0) if false else '#' }}" class="btn" onclick="document.getElementById('novoEx').scrollIntoView({behavior:'smooth'});return false;">+ Novo exercício</a>
+      <a href="{{ url_for('admin_painel') }}" class="btn btn-fantasma">Painel</a>
+    </div>
+  </div>
+
+  <form method="get" class="busca">
+    <input type="search" name="q" value="{{ busca }}" placeholder="Buscar por nome ou grupo...">
+    <button class="btn" type="submit">Buscar</button>
+  </form>
+
+  <table class="tabela-ex">
+    <thead><tr><th>Nome</th><th>Grupo</th><th>Equipamento</th><th>Nível</th><th>Contraindicado para</th><th></th></tr></thead>
+    <tbody>
+      {% for e in itens %}
+      <tr>
+        <td><strong>{{ e['nome'] }}</strong></td>
+        <td>{{ e['grupo'] }}</td>
+        <td>{{ e['equipamento'].replace('_',' ') }}</td>
+        <td>{{ e['nivel'] }}</td>
+        <td>
+          {% for c in (e['contraindicado_para'] or '').split(',') if c %}
+          <span class="tag tag-limite">{{ LIMIT_LABELS.get(c, c) }}</span>
+          {% endfor %}
+        </td>
+        <td class="td-acoes">
+          <a class="btn btn-mini" href="{{ url_for('admin_exercicio_editar', ex_id=e['id']) }}">Editar</a>
+          <form method="post" action="{{ url_for('admin_exercicio_excluir', ex_id=e['id']) }}"
+                onsubmit="return confirm('Excluir {{ e['nome'] }}?')">
+            <button class="btn btn-mini" type="submit">Excluir</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h2 id="novoEx" style="margin-top:2rem">Adicionar exercício</h2>
+  <form method="post" action="{{ url_for('admin_exercicio_salvar') }}" class="formulario">
+    <div class="grade grade-3">
+      <label class="campo"><span>Nome *</span><input type="text" name="nome" required placeholder="Ex.: Supino inclinado"></label>
+      <label class="campo"><span>Grupo *</span>
+        <select name="grupo" required>
+          {% for g in ['peito','costas','ombros','biceps','triceps','quadriceps','posterior','gluteo','panturrilha','core','cardio','mobilidade'] %}
+          <option value="{{ g }}">{{ g }}</option>
+          {% endfor %}
+        </select></label>
+      <label class="campo"><span>Equipamento</span>
+        <select name="equipamento">
+          {% for e in ['peso_corporal','halteres','barra','maquina','cabo','cardio'] %}
+          <option value="{{ e }}">{{ e.replace('_',' ') }}</option>
+          {% endfor %}
+        </select></label>
+      <label class="campo"><span>Nível</span>
+        <select name="nivel">
+          {% for n in ['iniciante','intermediario','avancado'] %}<option value="{{ n }}">{{ n }}</option>{% endfor %}
+        </select></label>
+    </div>
+    <div class="campo"><span>Contraindicado para (pode marcar mais de um)</span>
+      <div class="pills">
+        {% for cod, rot in LIMIT_LABELS.items() %}
+        <label class="pill"><input type="checkbox" name="contraindicado_para" value="{{ cod }}"><span>{{ rot }}</span></label>
+        {% endfor %}
+      </div>
+    </div>
+    <button class="btn" type="submit">Salvar exercício</button>
+  </form>
+</section>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Sobre — FitNews{% endblock %}
+{% block content %}
+<section class="container pagina-form">
+  <h1>Sobre a FitNews</h1>
+  <p class="sub">Academia + tecnologia: treino seguro, alimentação e suplementação em um só lugar.</p>
+
+  <div class="grade grade-2">
+    <div class="card">
+      <h3>Como o plano é montado</h3>
+      <ul class="lista">
+        <li>Você responde o formulário (dados, limitações e focos).</li>
+        <li>O sistema cruza suas respostas com o banco de exercícios.</li>
+        <li>Exercícios contraindicados às suas limitações são <strong>excluídos</strong>.</li>
+        <li>Os grupos musculares dos seus focos são distribuídos nos dias disponíveis.</li>
+        <li>Séries, repetições e descanso variam conforme o objetivo (perda de peso, força, hipertrofia...).</li>
+        <li>Aquecimento, alongamento, alimentação e suplementos entram automaticamente.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Regras de segurança</h3>
+      <ul class="lista">
+        <li><strong>Hérnia de disco / bico de papagaio:</strong> bloqueados agachamento livre, terra, remada curvada, bom dia, abdominais com flexão/rotação, burpees e afundos com carga.</li>
+        <li><strong>Hérnia abdominal:</strong> bloqueados abdominais clássicos e pranchas; entram respiração diafragmática, dead bug e bird dog.</li>
+        <li><strong>Joelho:</strong> bloqueados agachamentos profundos com salto, passadas e afundos.</li>
+        <li>Cada alteração de foco recalcula o plano substituindo apenas o que mudou.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Alimentação</h3>
+      <p>Calculamos seu gasto calórico (Mifflin-St Jeor quando você informa peso e altura) e ajustamos ao objetivo: déficit para perda de peso, superávit leve para hipertrofia e força. As refeições-exemplo variam por faixa etária: &lt;20, 20-29, 30-39, 40-49, 50-59 e 60+.</p>
+    </div>
+    <div class="card">
+      <h3>Suplementos</h3>
+      <p>A lista combina base por idade + extras do seu foco + extras das suas limitações (por exemplo, colágeno e ômega 3 para coluna e articulações). Sempre com dosagem indicativa e avisos — suplemento não substitui refeição nem orientação profissional.</p>
+    </div>
+  </div>
+
+  <div class="caixa-destaque" style="margin-top:2rem">
+    <div>
+      <h2>Quer experimentar?</h2>
+      <p>Leva menos de 3 minutos para gerar o seu plano completo.</p>
+    </div>
+    <a href="{{ url_for('criar') }}" class="btn btn-grande">Criar meu plano</a>
+  </div>
+</section>
+{% endblock %}

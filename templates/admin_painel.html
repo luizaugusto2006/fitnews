@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Painel — FitNews Admin{% endblock %}
+{% block content %}
+<section class="container pagina-form">
+  <div class="plano-topo">
+    <div>
+      <h1>Painel administrativo</h1>
+      <p class="sub">Base de exercícios e planos gerados.</p>
+    </div>
+    <div class="plano-acoes">
+      <a href="{{ url_for('admin_exercicios') }}" class="btn">Gerenciar exercícios</a>
+      <a href="{{ url_for('admin_sair') }}" class="btn btn-fantasma">Sair</a>
+    </div>
+  </div>
+
+  <div class="grade grade-2">
+    <div class="card card-num"><strong>{{ n_ex }}</strong><span>exercícios na base</span></div>
+    <div class="card card-num"><strong>{{ n_pl }}</strong><span>planos gerados</span></div>
+  </div>
+
+  <h2 style="margin-top:2rem">Últimos planos</h2>
+  {% if planos %}
+  <table class="tabela-ex" style="margin-top:1rem">
+    <thead><tr><th>#</th><th>Nome</th><th>Gerado em</th><th></th></tr></thead>
+    <tbody>
+      {% for p in planos %}
+      <tr>
+        <td>{{ p['id'] }}</td>
+        <td><a href="{{ url_for('ver_plano', plano_id=p['id']) }}">{{ p['nome'] }}</a></td>
+        <td>{{ p['criado_em'] }}</td>
+        <td>
+          <form method="post" action="{{ url_for('admin_plano_excluir', plano_id=p['id']) }}"
+                onsubmit="return confirm('Excluir o plano #{{ p['id'] }}?')">
+            <button class="btn btn-mini" type="submit">Excluir</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<p>Nenhum plano ainda.</p>{% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Meus planos — FitNews{% endblock %}
+{% block content %}
+<section class="container pagina-form">
+  <div class="plano-topo">
+    <div>
+      <h1>Meus planos</h1>
+      <p class="sub">Todos os planos gerados neste navegador/servidor. Clique para abrir.</p>
+    </div>
+    <a href="{{ url_for('criar') }}" class="btn">Criar novo plano</a>
+  </div>
+
+  {% if itens %}
+  <div class="lista-planos">
+    {% for p in itens %}
+    <a class="item-plano" href="{{ url_for('ver_plano', plano_id=p['id']) }}">
+      <div>
+        <strong>#{{ p['id'] }} · {{ p['nome'] }}</strong>
+        <p>{{ p['idade'] }} anos · {{ p['dias'] }} dias/semana · {{ p['focos'] }}</p>
+      </div>
+      <span class="data">{{ p['criado_em'] }}</span>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="vazio">
+    <p>Nenhum plano gerado ainda.</p>
+    <a href="{{ url_for('criar') }}" class="btn">Criar o primeiro plano</a>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}FitNews — Academia de Musculação{% endblock %}
+{% block content %}
+<section class="hero">
+  <div class="container">
+    <p class="selo">ACADEMIA FITNEWS</p>
+    <h1>Seu treino montado em <span class="destaque">minutos</span>, com segurança para o seu corpo.</h1>
+    <p class="sub">Responda algumas perguntas e receba um plano de treino completo: exercícios, séries, repetições, aquecimento, alongamento, alimentação por idade e suplementação sugerida.</p>
+    <div class="hero-botoes">
+      <a href="{{ url_for('criar') }}" class="btn btn-grande">Criar meu plano grátis</a>
+      <a href="{{ url_for('sobre') }}" class="btn btn-fantasma btn-grande">Como funciona</a>
+    </div>
+  </div>
+</section>
+
+<section class="container secoes">
+  <div class="grade grade-4">
+    <div class="card">
+      <div class="card-ico">1</div>
+      <h3>Conte sobre você</h3>
+      <p>Nome, sexo, idade, peso, altura, nível de treino e quantos dias por semana você tem disponível.</p>
+    </div>
+    <div class="card">
+      <div class="card-ico">2</div>
+      <h3>Informe limitações</h3>
+      <p>Hérnia de disco, bico de papagaio, joelho, coluna, ombro e mais. Exercícios de risco são <strong>bloqueados</strong> do seu plano.</p>
+    </div>
+    <div class="card">
+      <div class="card-ico">3</div>
+      <h3>Escolha o foco</h3>
+      <p>Braços, pernas, perda de peso, hipertrofia, resistência... Selecione quantos quiser. Mudou? O plano se ajusta.</p>
+    </div>
+    <div class="card">
+      <div class="card-ico">4</div>
+      <h3>Receba tudo</h3>
+      <p>Treino da semana, aquecimento, alongamento pré/pós, alimentação por idade e suplementos sugeridos.</p>
+    </div>
+  </div>
+</section>
+
+<section class="container secoes">
+  <div class="caixa-destaque">
+    <div>
+      <h2>Segurança em primeiro lugar</h2>
+      <p>Nosso banco de exercícios tem regras de contraindicação por limitação. Se você marcar <strong>hérnia de disco</strong> ou <strong>bico de papagaio</strong>, todo exercício que comprime, flete ou roteia a coluna com carga é removido automaticamente e substituído por opções seguras.</p>
+    </div>
+    <a href="{{ url_for('criar') }}" class="btn btn-grande">Começar agora</a>
+  </div>
+</section>
+
+<section class="container secoes">
+  <h2 class="titulo-secao">O que você recebe</h2>
+  <div class="grade grade-3">
+    <div class="card card-lista"><h3>Plano semanal</h3><ul><li>Dias A, B, C... personalizados</li><li>Séries, reps e descanso</li><li>Progressão pelo seu nível</li></ul></div>
+    <div class="card card-lista"><h3>Aquecimento e alongamento</h3><ul><li>Aquecimento antes do treino</li><li>Alongamento dinâmico pré</li><li>Alongamento pós por grupo</li></ul></div>
+    <div class="card card-lista"><h3>Alimentação</h3><ul><li>Calorias pelo seu gasto</li><li>Macros por faixa de idade</li><li>5 refeições-exemplo</li></ul></div>
+    <div class="card card-lista"><h3>Suplementos</h3><ul><li>Por idade, foco e limitação</li><li>Dosagem indicativa</li><li>Avisos de segurança</li></ul></div>
+    <div class="card card-lista"><h3>Editar a qualquer momento</h3><ul><li>Trocou o foco? Só o que mudou</li><li>Plano salvo com histórico</li><li>Sem cadastro obrigatório</li></ul></div>
+    <div class="card card-lista"><h3>Simples de usar</h3><ul><li>Uma página, tudo organizado</li><li>Funciona no celular</li><li>Painel admin para ajustar a base</li></ul></div>
+  </div>
+</section>
+
+<section class="container secoes chamada-final">
+  <h2>Pronto para treinar do jeito certo?</h2>
+  <a href="{{ url_for('criar') }}" class="btn btn-grande">Criar meu plano de treino</a>
+</section>
+{% endblock %}

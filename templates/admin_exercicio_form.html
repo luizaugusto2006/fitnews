@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Editar exercício — FitNews Admin{% endblock %}
+{% block content %}
+<section class="container pagina-form" style="max-width:720px">
+  <h1>{{ 'Editar exercício' if ex['id'] else 'Novo exercício' }}</h1>
+  <form method="post" action="{{ url_for('admin_exercicio_salvar') }}" class="formulario">
+    {% if ex['id'] %}<input type="hidden" name="id" value="{{ ex['id'] }}">{% endif %}
+    <label class="campo"><span>Nome *</span>
+      <input type="text" name="nome" required value="{{ ex['nome'] if ex else '' }}"></label>
+    <div class="grade grade-3">
+      <label class="campo"><span>Grupo *</span>
+        <select name="grupo">
+          {% for g in ['peito','costas','ombros','biceps','triceps','quadriceps','posterior','gluteo','panturrilha','core','cardio','mobilidade'] %}
+          <option value="{{ g }}" {{ 'selected' if ex and ex['grupo']==g else '' }}>{{ g }}</option>
+          {% endfor %}
+        </select></label>
+      <label class="campo"><span>Equipamento</span>
+        <select name="equipamento">
+          {% for e in ['peso_corporal','halteres','barra','maquina','cabo','cardio'] %}
+          <option value="{{ e }}" {{ 'selected' if ex and ex['equipamento']==e else '' }}>{{ e.replace('_',' ') }}</option>
+          {% endfor %}
+        </select></label>
+      <label class="campo"><span>Nível</span>
+        <select name="nivel">
+          {% for n in ['iniciante','intermediario','avancado'] %}
+          <option value="{{ n }}" {{ 'selected' if ex and ex['nivel']==n else '' }}>{{ n }}</option>
+          {% endfor %}
+        </select></label>
+    </div>
+    <div class="campo"><span>Contraindicado para</span>
+      <div class="pills">
+        {% set atuais = (ex['contraindicado_para'] or '').split(',') if ex else [] %}
+        {% for cod, rot in LIMIT_LABELS.items() %}
+        <label class="pill"><input type="checkbox" name="contraindicado_para" value="{{ cod }}"
+          {{ 'checked' if cod in atuais else '' }}><span>{{ rot }}</span></label>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="acoes">
+      <button class="btn" type="submit">Salvar</button>
+      <a class="btn btn-fantasma" href="{{ url_for('admin_exercicios') }}">Voltar</a>
+    </div>
+  </form>
+</section>
+{% endblock %}
