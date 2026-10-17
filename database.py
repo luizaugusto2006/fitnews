@@ -2,6 +2,7 @@
 """Banco de dados SQLite do FitNews: esquema e seed."""
 import os
 import sqlite3
+import time
 
 from data_exercises import EXERCISES
 
@@ -39,7 +40,7 @@ CREATE TABLE IF NOT EXISTS planos (
     personal_id INTEGER,
     anotacoes TEXT NOT NULL DEFAULT '',
     dados_json TEXT NOT NULL DEFAULT '{}',
-    criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+    criado_em TEXT NOT NULL DEFAULT (datetime('now', '-3 hours'))
 );
 
 CREATE TABLE IF NOT EXISTS personais (
@@ -48,7 +49,7 @@ CREATE TABLE IF NOT EXISTS personais (
     email TEXT NOT NULL UNIQUE,
     senha_hash TEXT NOT NULL,
     codigo TEXT NOT NULL UNIQUE,
-    criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+    criado_em TEXT NOT NULL DEFAULT (datetime('now', '-3 hours'))
 );
 """
 
@@ -72,6 +73,14 @@ def init_db():
     for coluna, ddl in MIGRACOES_PLANOS:
         if coluna not in colunas:
             conn.execute(ddl)
+    # Correcao unica: bancos criados antes desta versao gravavam UTC no servidor
+    # (PythonAnywhere). Se a maquina esta em UTC, desloca os horarios ja gravados
+    # para o horario de Brasilia (UTC-3). user_version garante que roda uma vez.
+    if conn.execute("PRAGMA user_version").fetchone()[0] < 1:
+        if time.timezone == 0:
+            conn.execute("UPDATE planos SET criado_em = datetime(criado_em, '+3 hours')")
+            conn.execute("UPDATE personais SET criado_em = datetime(criado_em, '+3 hours')")
+        conn.execute("PRAGMA user_version = 1")
     total = conn.execute("SELECT COUNT(*) c FROM exercicios").fetchone()["c"]
     if total == 0:
         conn.executemany(
