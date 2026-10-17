@@ -14,6 +14,9 @@
 }
 
 * { box-sizing: border-box; }
+/* Garante que o atributo hidden sempre esconda, mesmo com display definido na classe
+   (corrige modal/timer/QR que usam display:flex + hidden) */
+[hidden] { display: none !important; }
 html { scroll-behavior: smooth; }
 body {
   margin: 0;
