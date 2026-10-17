@@ -82,7 +82,7 @@
           <h2>{{ dia['titulo'] }}</h2>
           <p>{% for g in dia['grupos'] %}{{ g }}{{ ' · ' if not loop.last }}{% endfor %}</p>
         </header>
-        <table class="tabela-ex">
+        <table class="tabela-ex tabela-treino">
           <thead><tr><th>Exercício</th><th>Séries</th><th>Reps</th><th>Descanso</th><th>Carga</th></tr></thead>
           <tbody>
             {% for e in dia['exercicios'] %}
@@ -93,13 +93,13 @@
                         data-atual="{{ e['nome'] }}" data-grupo="{{ e['grupo'] }}">↻ trocar</button>
                 <br><small>{{ e['grupo_label'] }} · {{ e['equipamento'].replace('_',' ') }}</small>
               </td>
-              <td>{{ e['series'] }}</td>
-              <td>{{ e['reps'] }}</td>
-              <td class="td-descanso">{{ e['descanso'] }}
+              <td data-l="Séries">{{ e['series'] }}</td>
+              <td data-l="Reps">{{ e['reps'] }}</td>
+              <td class="td-descanso" data-l="Descanso">{{ e['descanso'] }}
                 <button type="button" class="btn-timer" data-descanso="{{ e['descanso'] }}"
                         title="Iniciar descanso" hidden>⏱</button>
               </td>
-              <td><input type="text" class="input-carga" data-ex="{{ e['nome'] }}"
+              <td data-l="Carga"><input type="text" class="input-carga" data-ex="{{ e['nome'] }}"
                          value="{{ e.get('carga','') }}" placeholder="—" maxlength="40"></td>
             </tr>
             {% endfor %}

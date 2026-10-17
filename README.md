@@ -56,6 +56,10 @@ sugeridos.
 15. **Resumo 1 página** (`/plano/<id>/resumo`): ficha enxuta para imprimir/salvar PDF.
 16. **Política de Privacidade (LGPD)** em `/privacidade` + aceite obrigatório no formulário.
 17. **Backup CSV** no admin: `Baixar planos` e `Baixar exercícios` (UTF-8 com BOM, abre no Excel).
+18. **Padrão celular (mobile-first):** menu hambúrguer, tabelas de treino em cartões,
+    abas com rolagem horizontal, botões grandes (alvo de toque ≥44px), inputs em 16px
+    (sem zoom automático no iOS), meta tags de app (theme-color, standalone) e
+    layout de uma coluna abaixo de 768px.
 
 ## Rodar localmente
 

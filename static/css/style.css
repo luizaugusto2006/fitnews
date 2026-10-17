@@ -34,7 +34,9 @@ code { background: var(--fundo2); padding: .1rem .4rem; border-radius: 6px; }
 
 /* ---------- topo ---------- */
 .topo { background: rgba(13,15,13,.92); border-bottom: 1px solid var(--borda); position: sticky; top: 0; z-index: 50; backdrop-filter: blur(8px); }
-.topo-inner { display: flex; align-items: center; justify-content: space-between; padding: .8rem 0; gap: 1rem; flex-wrap: wrap; }
+.topo-inner { display: flex; align-items: center; justify-content: space-between; padding: .8rem 0; gap: 1rem; flex-wrap: wrap; position: relative; }
+.menu-btn { display: none; background: var(--card); border: 1px solid var(--borda); color: var(--texto);
+  font-size: 1.35rem; line-height: 1; border-radius: 10px; padding: .35rem .7rem; cursor: pointer; }
 .logo { font-weight: 900; font-size: 1.35rem; letter-spacing: 1px; color: var(--texto); }
 .logo span { color: var(--acento); }
 .logo:hover { text-decoration: none; }
@@ -302,8 +304,129 @@ input[readonly] { color: var(--acento); font-weight: 700; }
   a { color: #000; }
 }
 
-@media (max-width: 640px) {
-  .menu { gap: .7rem; }
+/* =========================================================
+   CELULAR (padrão mobile) — abaixo de 768px
+   ========================================================= */
+@media (max-width: 768px) {
+  /* --- menu hambúrguer --- */
+  .menu-btn { display: block; }
+  .menu {
+    display: none; position: absolute; top: calc(100% + .55rem); left: 0; right: 0;
+    background: var(--fundo2); border: 1px solid var(--borda); border-radius: 0 0 14px 14px;
+    flex-direction: column; align-items: stretch; padding: .5rem; gap: .15rem; z-index: 60;
+    box-shadow: 0 18px 40px rgba(0,0,0,.55);
+  }
+  .menu.aberto { display: flex; }
+  .menu a {
+    padding: .8rem .7rem; font-size: 1.02rem; border-radius: 10px;
+    min-height: 44px; display: flex; align-items: center; color: var(--texto);
+  }
+  .menu a:hover { background: var(--card); text-decoration: none; }
+  .menu a.btn { justify-content: center; background: var(--acento); color: #10130f; margin-top: .2rem; }
+
+  /* --- hero --- */
+  .hero { padding: 2.4rem 0; }
+  .hero-botoes { flex-direction: column; }
+  .hero-botoes .btn { width: 100%; text-align: center; }
+  .secoes { padding: 2rem 0 .5rem; }
+  .caixa-destaque { flex-direction: column; align-items: stretch; text-align: left; }
+  .caixa-destaque .btn { width: 100%; text-align: center; }
+
+  /* --- abas: rolagem horizontal --- */
+  .abas {
+    flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    padding-bottom: .7rem; scrollbar-width: thin;
+  }
+  .aba { white-space: nowrap; flex: 0 0 auto; min-height: 42px; }
+
+  /* --- grades de uma coluna --- */
+  .grade-dias { grid-template-columns: 1fr; }
+  .grade-2, .grade-3, .grade-4 { grid-template-columns: 1fr; }
+
+  /* --- iOS não dá zoom ao focar nos campos --- */
+  input, select, textarea { font-size: 16px; }
+  .campo > span, .pill span { font-size: .95rem; }
+  .pill span { padding: .65rem 1.05rem; }
+
+  /* --- botoes e acoes: alvos de toque grandes --- */
+  .btn { padding: .78rem 1.3rem; }
+  .btn-grande { padding: .95rem 1.5rem; width: 100%; text-align: center; }
+  .acoes { flex-direction: column; }
+  .acoes .btn { width: 100%; text-align: center; }
+  .plano-acoes { width: 100%; }
+  .plano-acoes .btn { flex: 1; text-align: center; }
+  .plano-topo { flex-direction: column; }
+
+  /* --- compartilhar --- */
+  .box-share { flex-direction: column; align-items: stretch; }
+  .share-botoes { width: 100%; }
+  .share-botoes .btn { flex: 1; text-align: center; }
+  #qrArea { align-self: center; }
+
+  /* --- tabelas comuns: rolagem horizontal --- */
+  .tabela-ex { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; }
+  .tabela-ex thead th { white-space: nowrap; }
+
+  /* --- TREINO em cartões (tabela principal) --- */
+  .tabela-treino { display: block; overflow: visible; }
+  .tabela-treino thead { display: none; }
+  .tabela-treino tbody { display: block; }
+  .tabela-treino tr {
+    display: block; background: var(--fundo2); border: 1px solid var(--borda);
+    border-radius: 12px; margin: .6rem .8rem .8rem; padding: .5rem .8rem;
+  }
+  .tabela-treino td {
+    display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+    border: none; border-bottom: 1px dashed var(--borda); padding: .45rem 0; text-align: right;
+  }
+  .tabela-treino td::before {
+    content: attr(data-l); color: var(--texto2); font-size: .7rem; font-weight: 800;
+    text-transform: uppercase; letter-spacing: .6px; text-align: left; flex: 0 0 auto;
+  }
+  .tabela-treino td:last-child { border-bottom: none; }
+  .tabela-treino td:first-child {
+    display: block; text-align: left; padding-top: .2rem; padding-bottom: .55rem;
+    font-size: 1.02rem; border-bottom: 1px solid var(--borda); margin-bottom: .2rem;
+  }
+  .tabela-treino td:first-child::before { display: none; }
+  .tabela-treino .btn-trocar { font-size: .74rem; padding: .3rem .55rem; min-height: 34px; }
+  .tabela-treino .btn-timer { min-width: 44px; min-height: 38px; font-size: 1rem; }
+  .input-carga { width: 96px; font-size: 16px; padding: .5rem .5rem; }
+  .dia-rodape { padding: .3rem .6rem 0; }
+
+  /* --- refeicoes empilhadas --- */
+  .tabela-refeicoes { display: block; }
+  .tabela-refeicoes tbody, .tabela-refeicoes tr { display: block; }
   .tabela-refeicoes th { width: auto; display: block; border: none; padding-bottom: 0; }
-  .tabela-refeicoes td { display: block; }
+  .tabela-refeicoes td { display: block; padding-top: .15rem; border-bottom: 1px solid var(--borda); }
+
+  /* --- filtros do personal empilhados --- */
+  .busca-filtros { flex-direction: column; align-items: stretch; }
+  .busca-filtros input[type="search"],
+  .busca-filtros select,
+  .busca-filtros .btn { width: 100%; min-width: 0; }
+
+  /* --- painel / cadastro --- */
+  .codigo-vinculo { flex-direction: column; align-items: stretch; text-align: center; }
+  .codigo-vinculo small { max-width: none; }
+  .codigo-vinculo .btn { width: 100%; }
+  .item-plano { padding: .9rem 1rem; }
+
+  /* --- timer flutuante --- */
+  .timer-bar {
+    max-width: 94vw; font-size: .98rem; padding: .6rem .9rem; gap: .6rem;
+    bottom: calc(.8rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* --- modal de troca --- */
+  .modal-caixa { max-height: 88vh; padding: 1rem; }
+  .item-troca { min-height: 52px; justify-content: center; }
+
+  /* --- misc --- */
+  .tabela-ex td, .tabela-ex th { padding: .55rem .5rem; }
+  .disclaimer, .cop { font-size: .76rem; }
+  .rodape { padding: 1.5rem 0; }
+  .evitados { padding: .9rem 1rem; }
+  .pagina-form, .pagina-plano { padding: 1.6rem 0 3rem; }
+  h1 { font-size: 1.6rem; }
 }

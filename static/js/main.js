@@ -2,6 +2,32 @@
 (function () {
   "use strict";
 
+  // ---------- Menu mobile (hamburguer) ----------
+  var menuBtn = document.getElementById("menuBtn");
+  var menu = document.getElementById("menuPrincipal");
+  if (menuBtn && menu) {
+    menuBtn.addEventListener("click", function () {
+      var aberto = menu.classList.toggle("aberto");
+      menuBtn.setAttribute("aria-expanded", aberto ? "true" : "false");
+      menuBtn.textContent = aberto ? "✕" : "☰";
+    });
+    menu.querySelectorAll("a").forEach(function (a) {
+      a.addEventListener("click", function () {
+        menu.classList.remove("aberto");
+        menuBtn.setAttribute("aria-expanded", "false");
+        menuBtn.textContent = "☰";
+      });
+    });
+    document.addEventListener("click", function (ev) {
+      if (!menu.contains(ev.target) && ev.target !== menuBtn &&
+          menu.classList.contains("aberto")) {
+        menu.classList.remove("aberto");
+        menuBtn.setAttribute("aria-expanded", "false");
+        menuBtn.textContent = "☰";
+      }
+    });
+  }
+
   // ---------- Abas do plano ----------
   var abas = document.querySelectorAll(".aba");
   abas.forEach(function (btn) {
