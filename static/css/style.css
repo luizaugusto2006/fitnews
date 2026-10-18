@@ -297,9 +297,54 @@ input[readonly] { color: var(--acento); font-weight: 700; }
 .disclaimer { font-size: .8rem !important; opacity: .8; }
 .cop { font-size: .8rem !important; opacity: .6; }
 
+/* ---------- imagens e ornamentos ---------- */
+.logo { display: flex; align-items: center; gap: .5rem; }
+.logo-ico { width: 34px; height: 17px; color: var(--acento); flex: 0 0 auto; }
+
+.hero { position: relative; overflow: hidden; }
+.hero > .container { position: relative; z-index: 1; }
+.hero-marca {
+  position: absolute; right: -4%; top: 50%; width: min(560px, 44vw);
+  transform: translateY(-50%) rotate(-9deg); opacity: .13;
+  pointer-events: none; user-select: none;
+}
+
+.seg-fig { width: 150px; flex: 0 0 auto; align-self: center; }
+
+.ico-card { display: block; width: 44px; height: 44px; margin-bottom: .7rem; }
+
+.fig-branca {
+  margin: 0; background: #fff; padding: 10px; border-radius: 18px;
+  box-shadow: 0 14px 34px rgba(0,0,0,.4); display: block;
+}
+.fig-branca img { display: block; width: 100%; height: auto; border-radius: 10px; }
+
+.sobre-topo {
+  display: grid; grid-template-columns: 1.5fr .9fr; gap: 2rem;
+  align-items: center; margin-bottom: 1.8rem;
+}
+.sobre-fig { max-width: 320px; justify-self: end; }
+
+.cabecalho-form { display: flex; gap: 1.6rem; align-items: center; justify-content: space-between; }
+.tile-topo { width: 160px; flex: 0 0 auto; }
+
+.plano-topo { position: relative; }
+.plano-topo > div, .plano-acoes { position: relative; z-index: 1; }
+.marca-plano {
+  position: absolute; right: 0; top: -6px; width: 240px; opacity: .1;
+  pointer-events: none; user-select: none;
+}
+
+.vazio-fig {
+  width: 150px; border-radius: 16px; border: 1px solid #fff;
+  box-shadow: 0 12px 28px rgba(0,0,0,.35); margin-bottom: 1.1rem;
+}
+.vazio p { margin-bottom: 1rem; }
+
 /* ---------- impressao ---------- */
 @media print {
-  .topo, .rodape, .abas, .plano-acoes, .acoes, .evitados { display: none !important; }
+  .topo, .rodape, .abas, .plano-acoes, .acoes, .evitados,
+  .marca-plano, .hero-marca { display: none !important; }
   body { background: #fff; color: #000; }
   .painel { display: block !important; page-break-inside: avoid; }
   .card, .dia, .bloco, .along-card { border: 1px solid #999; background: #fff; color: #000; }
@@ -432,4 +477,12 @@ input[readonly] { color: var(--acento); font-weight: 700; }
   .evitados { padding: .9rem 1rem; }
   .pagina-form, .pagina-plano { padding: 1.6rem 0 3rem; }
   h1 { font-size: 1.6rem; }
+
+  /* --- imagens e ornamentos no celular --- */
+  .hero-marca { width: 78vw; right: -24vw; opacity: .09; }
+  .seg-fig, .tile-topo, .marca-plano { display: none; }
+  .sobre-topo { grid-template-columns: 1fr; gap: 1.3rem; }
+  .sobre-fig { justify-self: center; max-width: 270px; }
+  .ico-card { width: 40px; height: 40px; }
+  .vazio-fig { width: 130px; }
 }

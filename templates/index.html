@@ -2,6 +2,7 @@
 {% block title %}FitNews — Academia de Musculação{% endblock %}
 {% block content %}
 <section class="hero">
+  <img class="hero-marca" src="{{ url_for('static', filename='img/barra.svg') }}" alt="" aria-hidden="true">
   <div class="container">
     <p class="selo">ACADEMIA FITNEWS</p>
     <h1>Seu treino montado em <span class="destaque">minutos</span>, com segurança para o seu corpo.</h1>
@@ -40,6 +41,7 @@
 
 <section class="container secoes">
   <div class="caixa-destaque">
+    <img class="seg-fig" src="{{ url_for('static', filename='img/agachamento.svg') }}" alt="" aria-hidden="true">
     <div>
       <h2>Segurança em primeiro lugar</h2>
       <p>Nosso banco de exercícios tem regras de contraindicação por limitação. Se você marcar <strong>hérnia de disco</strong> ou <strong>bico de papagaio</strong>, todo exercício que comprime, flete ou roteia a coluna com carga é removido automaticamente e substituído por opções seguras.</p>
@@ -51,12 +53,12 @@
 <section class="container secoes">
   <h2 class="titulo-secao">O que você recebe</h2>
   <div class="grade grade-3">
-    <div class="card card-lista"><h3>Plano semanal</h3><ul><li>Dias A, B, C... personalizados</li><li>Séries, reps e descanso</li><li>Progressão pelo seu nível</li></ul></div>
-    <div class="card card-lista"><h3>Aquecimento e alongamento</h3><ul><li>Aquecimento antes do treino</li><li>Alongamento dinâmico pré</li><li>Alongamento pós por grupo</li></ul></div>
-    <div class="card card-lista"><h3>Alimentação</h3><ul><li>Calorias pelo seu gasto</li><li>Macros por faixa de idade</li><li>5 refeições-exemplo</li></ul></div>
-    <div class="card card-lista"><h3>Suplementos</h3><ul><li>Por idade, foco e limitação</li><li>Dosagem indicativa</li><li>Avisos de segurança</li></ul></div>
-    <div class="card card-lista"><h3>Editar a qualquer momento</h3><ul><li>Trocou o foco? Só o que mudou</li><li>Plano salvo com histórico</li><li>Sem cadastro obrigatório</li></ul></div>
-    <div class="card card-lista"><h3>Simples de usar</h3><ul><li>Uma página, tudo organizado</li><li>Funciona no celular</li><li>Painel admin para ajustar a base</li></ul></div>
+    <div class="card card-lista"><img class="ico-card" src="{{ url_for('static', filename='img/icone-treino.svg') }}" alt="" aria-hidden="true"><h3>Plano semanal</h3><ul><li>Dias A, B, C... personalizados</li><li>Séries, reps e descanso</li><li>Progressão pelo seu nível</li></ul></div>
+    <div class="card card-lista"><img class="ico-card" src="{{ url_for('static', filename='img/icone-aquecimento.svg') }}" alt="" aria-hidden="true"><h3>Aquecimento e alongamento</h3><ul><li>Aquecimento antes do treino</li><li>Alongamento dinâmico pré</li><li>Alongamento pós por grupo</li></ul></div>
+    <div class="card card-lista"><img class="ico-card" src="{{ url_for('static', filename='img/icone-maca.svg') }}" alt="" aria-hidden="true"><h3>Alimentação</h3><ul><li>Calorias pelo seu gasto</li><li>Macros por faixa de idade</li><li>5 refeições-exemplo</li></ul></div>
+    <div class="card card-lista"><img class="ico-card" src="{{ url_for('static', filename='img/icone-suplemento.svg') }}" alt="" aria-hidden="true"><h3>Suplementos</h3><ul><li>Por idade, foco e limitação</li><li>Dosagem indicativa</li><li>Avisos de segurança</li></ul></div>
+    <div class="card card-lista"><img class="ico-card" src="{{ url_for('static', filename='img/icone-editar.svg') }}" alt="" aria-hidden="true"><h3>Editar a qualquer momento</h3><ul><li>Trocou o foco? Só o que mudou</li><li>Plano salvo com histórico</li><li>Sem cadastro obrigatório</li></ul></div>
+    <div class="card card-lista"><img class="ico-card" src="{{ url_for('static', filename='img/icone-celular.svg') }}" alt="" aria-hidden="true"><h3>Simples de usar</h3><ul><li>Uma página, tudo organizado</li><li>Funciona no celular</li><li>Painel admin para ajustar a base</li></ul></div>
   </div>
 </section>
 

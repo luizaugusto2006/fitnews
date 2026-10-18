@@ -2,8 +2,15 @@
 {% block title %}{{ 'Editar plano' if edicao_id else 'Criar plano de treino' }} — FitNews{% endblock %}
 {% block content %}
 <section class="container pagina-form">
-  <h1>{{ 'Editar plano de treino' if edicao_id else 'Criar plano de treino' }}</h1>
-  <p class="sub">Preencha os dados abaixo. Quanto mais completo, mais preciso fica o seu plano. Campos com <span class="obrig">*</span> são obrigatórios.</p>
+  <div class="cabecalho-form">
+    <div>
+      <h1>{{ 'Editar plano de treino' if edicao_id else 'Criar plano de treino' }}</h1>
+      <p class="sub">Preencha os dados abaixo. Quanto mais completo, mais preciso fica o seu plano. Campos com <span class="obrig">*</span> são obrigatórios.</p>
+    </div>
+    <figure class="fig-branca tile-topo">
+      <img src="{{ url_for('static', filename='img/barra-ref.png') }}" alt="Barra de halteres">
+    </figure>
+  </div>
 
   <form method="post" id="formPlano" class="formulario" novalidate>
     <fieldset>

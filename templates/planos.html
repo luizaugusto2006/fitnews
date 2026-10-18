@@ -24,6 +24,7 @@
   </div>
   {% else %}
   <div class="vazio">
+    <img class="vazio-fig" src="{{ url_for('static', filename='img/agachamento-ref.png') }}" alt="" aria-hidden="true">
     <p>Nenhum plano gerado ainda.</p>
     <a href="{{ url_for('criar') }}" class="btn">Criar o primeiro plano</a>
   </div>

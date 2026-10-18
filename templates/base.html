@@ -10,12 +10,13 @@
   <meta name="apple-mobile-web-app-title" content="FitNews">
   <title>{% block title %}FitNews — Academia{% endblock %}</title>
   <meta name="description" content="FitNews: treinos personalizados com segurança, alimentação por idade e suplementação sugerida.">
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/favicon.svg') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
 <header class="topo">
   <div class="container topo-inner">
-    <a href="{{ url_for('index') }}" class="logo">FIT<span>NEWS</span></a>
+    <a href="{{ url_for('index') }}" class="logo"><svg class="logo-ico" viewBox="0 0 40 20" aria-hidden="true"><g fill="currentColor"><rect x="0" y="4" width="6" height="12" rx="2.5"/><rect x="7.5" y="6.5" width="4.5" height="7" rx="2"/><rect x="13" y="8.5" width="14" height="3" rx="1.5"/><rect x="28" y="6.5" width="4.5" height="7" rx="2"/><rect x="34" y="4" width="6" height="12" rx="2.5"/></g></svg>FIT<span>NEWS</span></a>
     <button class="menu-btn" id="menuBtn" aria-label="Abrir menu" aria-expanded="false" aria-controls="menuPrincipal">☰</button>
     <nav class="menu" id="menuPrincipal">
       <a href="{{ url_for('index') }}">Início</a>

@@ -2,8 +2,15 @@
 {% block title %}Sobre — FitNews{% endblock %}
 {% block content %}
 <section class="container pagina-form">
-  <h1>Sobre a FitNews</h1>
-  <p class="sub">Academia + tecnologia: treino seguro, alimentação e suplementação em um só lugar.</p>
+  <div class="sobre-topo">
+    <div>
+      <h1>Sobre a FitNews</h1>
+      <p class="sub">Academia + tecnologia: treino seguro, alimentação e suplementação em um só lugar.</p>
+    </div>
+    <figure class="fig-branca sobre-fig">
+      <img src="{{ url_for('static', filename='img/casal.png') }}" alt="Ilustração de um casal treinando com halteres">
+    </figure>
+  </div>
 
   <div class="grade grade-2">
     <div class="card">
