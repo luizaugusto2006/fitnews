@@ -31,7 +31,9 @@
             <option value="nao_informar" {{ 'selected' if dados.get('sexo')=='nao_informar' else '' }}>Prefiro não informar</option>
           </select></label>
         <label class="campo"><span>Data de nascimento <span class="obrig">*</span></span>
-          <input type="date" name="data_nascimento" id="nascimento" required value="{{ dados.get('data_nascimento','') }}">
+          <input type="text" inputmode="numeric" name="data_nascimento" id="nascimento"
+                 required maxlength="10" placeholder="DD/MM/AAAA" autocomplete="bday"
+                 value="{{ data_brasil(dados.get('data_nascimento','')) }}">
           <small id="idadeMostra" class="dica"></small></label>
         <label class="campo"><span>Nível de treino</span>
           <select name="nivel_treino">

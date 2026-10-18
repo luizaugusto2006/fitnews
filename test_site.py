@@ -310,5 +310,24 @@ r = c.post("/recuperar", data={"email": "dono@fitnews.com", "codigo": "REC-ERRAD
 print("  codigo errado recusado:", "código de recuperação inválidos" in r.get_data(as_text=True))
 assert "código de recuperação inválidos" in r.get_data(as_text=True)
 
+print("== Data de nascimento digitada DD/MM/AAAA ==")
+r = c.post("/criar", data={
+    "nome": "Data Brasileira", "sexo": "outro", "data_nascimento": "15/07/1985",
+    "peso": "70", "altura": "175", "atividade": "moderado",
+    "nivel_treino": "iniciante", "dias": "3", "local": "academia",
+    "focos": ["core"], "aceite": "sim", "aceite_privacidade": "sim",
+}, follow_redirects=True)
+hp = r.get_data(as_text=True)
+print("  plano gerado:", r.status_code == 200 and "Data Brasileira" in hp)
+assert r.status_code == 200 and "Data Brasileira" in hp
+conn = database.get_db()
+lin = conn.execute("SELECT data_nascimento, idade FROM planos WHERE nome='Data Brasileira'"
+                   ).fetchone()
+conn.close()
+print("  salva como ISO:", lin["data_nascimento"] == "1985-07-15",
+      "| idade:", lin["idade"])
+assert lin["data_nascimento"] == "1985-07-15"
+assert lin["idade"] and 10 <= lin["idade"] <= 100
+
 print()
 print("TODOS OS TESTES PASSARAM" if falhas == 0 else "HOUVE FALHAS")

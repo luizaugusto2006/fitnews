@@ -72,17 +72,37 @@
   // ---------- Idade pela data de nascimento ----------
   var nasc = document.getElementById("nascimento");
   var idadeMostra = document.getElementById("idadeMostra");
+  function parseDataBr(v) {
+    var m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec((v || "").trim());
+    if (m) return new Date(+m[3], +m[2] - 1, +m[1]);
+    var m2 = /^(\d{4})-(\d{2})-(\d{2})/.exec((v || "").trim());
+    if (m2) return new Date(+m2[1], +m2[2] - 1, +m2[3]);
+    return null;
+  }
   function calcIdade() {
     if (!nasc || !idadeMostra) return;
     if (!nasc.value) { idadeMostra.textContent = ""; return; }
-    var d = new Date(nasc.value);
+    var d = parseDataBr(nasc.value);
+    if (!d) { idadeMostra.textContent = ""; return; }
     var hoje = new Date();
     var idade = hoje.getFullYear() - d.getFullYear();
     var m = hoje.getMonth() - d.getMonth();
     if (m < 0 || (m === 0 && hoje.getDate() < d.getDate())) idade--;
     idadeMostra.textContent = idade >= 0 ? idade + " anos" : "";
   }
-  if (nasc) nasc.addEventListener("change", calcIdade);
+  function mascaraData() {
+    if (!nasc) return;
+    var s = nasc.value.replace(/\D/g, "").slice(0, 8);
+    var out = s.length > 4 ? s.slice(0, 2) + "/" + s.slice(2, 4) + "/" + s.slice(4)
+            : s.length > 2 ? s.slice(0, 2) + "/" + s.slice(2)
+            : s;
+    if (out !== nasc.value) nasc.value = out;
+    calcIdade();
+  }
+  if (nasc) {
+    nasc.addEventListener("input", mascaraData);
+    nasc.addEventListener("change", calcIdade);
+  }
   calcIdade();
 
   // ---------- Limitacoes: "nenhuma" x demais ----------

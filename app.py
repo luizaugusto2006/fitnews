@@ -7,7 +7,7 @@ import os
 import secrets
 import string
 import sqlite3
-from datetime import date
+from datetime import date, datetime
 
 from flask import (Flask, Response, abort, flash, jsonify, redirect,
                    render_template, request, session, url_for)
@@ -33,14 +33,33 @@ HORARIOS = [("manha", "Manhã"), ("tarde", "Tarde"), ("noite", "Noite"),
             ("variado", "Variado / conforme a agenda")]
 
 
+def _parse_data(valor):
+    """Aceita AAAA-MM-DD (ISO) ou DD/MM/AAAA digitado pelo usuario."""
+    valor = (valor or "").strip()
+    for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%d.%m.%Y"):
+        try:
+            return datetime.strptime(valor, fmt).date()
+        except ValueError:
+            continue
+    return None
+
+
 def calcular_idade(nasc):
-    try:
-        d = date.fromisoformat(nasc)
-    except ValueError:
+    d = _parse_data(nasc)
+    if not d:
         return None
     hoje = date.today()
     idade = hoje.year - d.year - ((hoje.month, hoje.day) < (d.month, d.day))
     return idade if 10 <= idade <= 100 else None
+
+
+@app.template_global()
+def data_brasil(valor):
+    """AAAA-MM-DD -> DD/MM/AAAA (texto livre passa adiante)."""
+    try:
+        return date.fromisoformat((valor or "").strip()[:10]).strftime("%d/%m/%Y")
+    except ValueError:
+        return valor or ""
 
 
 def _multi_vals(form, campo):
@@ -56,8 +75,10 @@ def ler_formulario(form):
     limitacoes = _multi_vals(form, "limitacoes")
     if "nenhuma" in limitacoes and len(limitacoes) > 1:
         limitacoes = ["nenhuma"]
-    nasc = form.get("data_nascimento", "")
-    idade = calcular_idade(nasc)
+    nasc_bruto = form.get("data_nascimento", "").strip()
+    nasc_data = _parse_data(nasc_bruto)
+    nasc = nasc_data.isoformat() if nasc_data else nasc_bruto
+    idade = calcular_idade(nasc_bruto)
     peso = form.get("peso", type=float) or None
     altura = form.get("altura", type=float) or None
     imc = round(peso / ((altura / 100) ** 2), 1) if peso and altura and altura > 0 else None

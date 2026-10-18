@@ -8,7 +8,8 @@ sugeridos.
 
 ## O que o site faz
 
-1. **Criar plano de treino** — nome, sexo, data de nascimento (idade), peso, altura (IMC
+1. **Criar plano de treino** — nome, sexo, data de nascimento (digite em `DD/MM/AAAA`,
+   o teclado numérico do celular abre sozinho), peso, altura (IMC
    automático), nível de treino, nível de atividade, dias/semana, horário, local
    (academia/casa), **limitações** (hérnia de disco, bico de papagaio, hérnia abdominal,
    coluna, joelho, ombro, punho, quadril, tornozelo, cardíaco, pressão, diabetes, asma,
