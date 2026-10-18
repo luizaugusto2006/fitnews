@@ -15,8 +15,9 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from data_content import LIMITATION_LABELS
 from database import get_db, init_db
-from gerador import (ATIVIDADE_LABELS, FOCOS, FOCO_LABELS, LIMITACOES,
-                     LIMIT_LABELS, banco_exercicios, gerar_plano)
+from gerador import (ATIVIDADE_LABELS, EQUIP_LABELS, FOCOS, FOCO_LABELS,
+                     GRUPO_LABELS, LIMITACOES, LIMIT_LABELS, NIVEL_LABELS,
+                     banco_exercicios, gerar_plano)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "fitnews-dev-key-troque-em-producao")
@@ -165,6 +166,8 @@ def _carregar_plano(plano_id):
     plano["dados"] = json.loads(plano["dados_json"])
     plano["limitacoes_lista"] = [x for x in (plano["limitacoes"] or "").split(",") if x]
     plano["focos_lista"] = [x for x in (plano["focos"] or "").split(",") if x]
+    plano["nivel_treino_label"] = NIVEL_LABELS.get(plano["nivel_treino"],
+                                                   plano["nivel_treino"])
     return plano
 
 
@@ -206,8 +209,10 @@ def plano_alternativas(plano_id):
     for dia in plano["dados"].get("dias", []):
         for e in dia.get("exercicios", []):
             usados.add(e["nome"])
-    alts = [{"nome": e["nome"], "equipamento": e["equipamento"].replace("_", " "),
-             "nivel": e["nivel"]}
+    alts = [{"nome": e["nome"],
+             "equipamento": EQUIP_LABELS.get(e["equipamento"],
+                                             e["equipamento"].replace("_", " ")),
+             "nivel": NIVEL_LABELS.get(e["nivel"], e["nivel"])}
             for e in permitidos if e["grupo"] == grupo and e["nome"] not in usados]
     return jsonify({"alternativas": alts[:12], "grupo": grupo})
 
@@ -638,7 +643,8 @@ def admin_exercicios():
         rows = conn.execute("SELECT * FROM exercicios ORDER BY grupo, nome").fetchall()
     conn.close()
     return render_template("admin_exercicios.html", itens=rows, busca=busca,
-                           LIMIT_LABELS=LIMITATION_LABELS)
+                           LIMIT_LABELS=LIMITATION_LABELS, GRUPO_LABELS=GRUPO_LABELS,
+                           EQUIP_LABELS=EQUIP_LABELS, NIVEL_LABELS=NIVEL_LABELS)
 
 
 @app.route("/admin/exercicios/salvar", methods=["POST"])
@@ -696,7 +702,8 @@ def admin_exercicio_editar(ex_id):
     if not row:
         abort(404)
     return render_template("admin_exercicio_form.html", ex=row,
-                           LIMIT_LABELS=LIMITATION_LABELS)
+                           LIMIT_LABELS=LIMITATION_LABELS, GRUPO_LABELS=GRUPO_LABELS,
+                           EQUIP_LABELS=EQUIP_LABELS, NIVEL_LABELS=NIVEL_LABELS)
 
 
 @app.route("/admin/planos/<int:plano_id>/excluir", methods=["POST"])

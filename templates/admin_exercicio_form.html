@@ -11,19 +11,19 @@
       <label class="campo"><span>Grupo *</span>
         <select name="grupo">
           {% for g in ['peito','costas','ombros','biceps','triceps','quadriceps','posterior','gluteo','panturrilha','core','cardio','mobilidade'] %}
-          <option value="{{ g }}" {{ 'selected' if ex and ex['grupo']==g else '' }}>{{ g }}</option>
+          <option value="{{ g }}" {{ 'selected' if ex and ex['grupo']==g else '' }}>{{ GRUPO_LABELS.get(g, g) }}</option>
           {% endfor %}
         </select></label>
       <label class="campo"><span>Equipamento</span>
         <select name="equipamento">
           {% for e in ['peso_corporal','halteres','barra','maquina','cabo','cardio'] %}
-          <option value="{{ e }}" {{ 'selected' if ex and ex['equipamento']==e else '' }}>{{ e.replace('_',' ') }}</option>
+          <option value="{{ e }}" {{ 'selected' if ex and ex['equipamento']==e else '' }}>{{ EQUIP_LABELS.get(e, e.replace('_',' ')) }}</option>
           {% endfor %}
         </select></label>
       <label class="campo"><span>Nível</span>
         <select name="nivel">
           {% for n in ['iniciante','intermediario','avancado'] %}
-          <option value="{{ n }}" {{ 'selected' if ex and ex['nivel']==n else '' }}>{{ n }}</option>
+          <option value="{{ n }}" {{ 'selected' if ex and ex['nivel']==n else '' }}>{{ NIVEL_LABELS.get(n, n) }}</option>
           {% endfor %}
         </select></label>
     </div>

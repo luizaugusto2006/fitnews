@@ -12,7 +12,7 @@
         {% if plano['imc'] %}IMC {{ plano['imc'] }} · {% endif %}
         {{ plano['dias'] }} dias/semana ·
         {{ 'Academia' if plano['local']=='academia' else 'Treino em casa' }} ·
-        Nível {{ plano['nivel_treino'] }}
+        Nível {{ plano['nivel_treino_label'] or plano['nivel_treino'] }}
       </p>
       <p class="tags">
         {% for f in plano['dados']['focos_rotulos'] %}<span class="tag tag-foco">{{ f }}</span>{% endfor %}
@@ -92,7 +92,7 @@
                 <strong>{{ e['nome'] }}</strong>
                 <button type="button" class="btn-trocar" title="Trocar por outro exercício do mesmo grupo (respeitando suas limitações)"
                         data-atual="{{ e['nome'] }}" data-grupo="{{ e['grupo'] }}">↻ trocar</button>
-                <br><small>{{ e['grupo_label'] }} · {{ e['equipamento'].replace('_',' ') }}</small>
+                <br><small>{{ e['grupo_label'] }} · {{ e.get('equipamento_label') or e['equipamento'].replace('_',' ') }}</small>
               </td>
               <td data-l="Séries">{{ e['series'] }}</td>
               <td data-l="Reps">{{ e['reps'] }}</td>

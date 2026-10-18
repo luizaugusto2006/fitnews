@@ -91,6 +91,21 @@ GRUPO_ORDEM = ["peito", "costas", "ombros", "biceps", "triceps", "quadriceps",
 NIVEL_ORDEM = {"iniciante": 0, "intermediario": 1, "avancado": 2}
 EQUIP_CASA = ("peso_corporal", "halteres", "cardio")
 
+# Rotulos legiveis dos codigos gravados no banco (para exibicao)
+NIVEL_LABELS = {
+    "iniciante": "Iniciante",
+    "intermediario": "Intermediário",
+    "avancado": "Avançado",
+}
+EQUIP_LABELS = {
+    "peso_corporal": "Peso corporal",
+    "halteres": "Halteres",
+    "barra": "Barra",
+    "maquina": "Máquina",
+    "cabo": "Cabo",
+    "cardio": "Cardio",
+}
+
 ATIVIDADE_FATOR = {
     "sedentario": 1.2, "leve": 1.375, "moderado": 1.55,
     "intenso": 1.725, "muito_intenso": 1.9,
@@ -361,7 +376,10 @@ def gerar_plano(dados, anterior=None):
                 eq = esquema(focos, g, nivel)
                 exercicios.append({
                     "nome": e["nome"], "grupo": g, "grupo_label": GRUPO_LABELS.get(g, g),
-                    "equipamento": e["equipamento"], "nivel": e["nivel"],
+                    "equipamento": e["equipamento"],
+                    "equipamento_label": EQUIP_LABELS.get(e["equipamento"], e["equipamento"].replace("_", " ")),
+                    "nivel": e["nivel"],
+                    "nivel_label": NIVEL_LABELS.get(e["nivel"], e["nivel"]),
                     "series": eq["series"], "reps": eq["reps"], "descanso": eq["descanso"],
                 })
         # sorteado no maximo para nao repetir sempre a mesma ordem visual

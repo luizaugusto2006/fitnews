@@ -50,7 +50,7 @@
     {% if plano['altura'] %}{{ plano['altura']|round(0) }} cm · {% endif %}
     {% if plano['imc'] %}IMC {{ plano['imc'] }} · {% endif %}
     {{ plano['dias'] }} dias/semana · {{ 'Academia' if plano['local']=='academia' else 'Casa' }} ·
-    Nível {{ plano['nivel_treino'] }} · Plano #{{ plano['id'] }}
+    Nível {{ plano['nivel_treino_label'] or plano['nivel_treino'] }} · Plano #{{ plano['id'] }}
   </p>
 
   <p class="tags" style="margin:.3rem 0">

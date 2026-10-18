@@ -3,10 +3,18 @@
 import os
 import sqlite3
 import time
+import unicodedata
 
 from data_exercises import EXERCISES
 
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fitnews.db")
+
+
+def _sem_acento(texto):
+    return "".join(
+        c for c in unicodedata.normalize("NFD", texto)
+        if unicodedata.category(c) != "Mn"
+    )
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS exercicios (
@@ -81,6 +89,36 @@ def init_db():
             conn.execute("UPDATE planos SET criado_em = datetime(criado_em, '+3 hours')")
             conn.execute("UPDATE personais SET criado_em = datetime(criado_em, '+3 hours')")
         conn.execute("PRAGMA user_version = 1")
+    # Reescrita ortografica: os nomes de exercicios agora sao gravados com
+    # acentos. Bancos antigos guardam os mesmos nomes sem acento, entao a
+    # migracao renomeia os registros e tambem os nomes dentro dos planos
+    # ja salvos (dados_json). user_version = 2 garante que roda uma vez.
+    if conn.execute("PRAGMA user_version").fetchone()[0] < 2:
+        pares = {}
+        for nome, _g, _e, _n, _c in EXERCISES:
+            antigo = _sem_acento(nome)
+            if antigo != nome:
+                pares[antigo] = nome
+        # Casos que nao diferem apenas por acento
+        pares["Rosca scott"] = "Rosca Scott"
+        pares["Donkey kick ( patada em quadrupedia )"] = \
+            "Donkey kick ( patada em quatro apoios )"
+        for antigo, novo in pares.items():
+            ja_novo = conn.execute(
+                "SELECT 1 FROM exercicios WHERE nome = ?", (novo,)
+            ).fetchone()
+            tem_antigo = conn.execute(
+                "SELECT 1 FROM exercicios WHERE nome = ?", (antigo,)
+            ).fetchone()
+            if tem_antigo and not ja_novo:
+                conn.execute(
+                    "UPDATE exercicios SET nome = ? WHERE nome = ?", (novo, antigo)
+                )
+            conn.execute(
+                "UPDATE planos SET dados_json = replace(dados_json, ?, ?)",
+                ('"%s"' % antigo, '"%s"' % novo),
+            )
+        conn.execute("PRAGMA user_version = 2")
     total = conn.execute("SELECT COUNT(*) c FROM exercicios").fetchone()["c"]
     if total == 0:
         conn.executemany(

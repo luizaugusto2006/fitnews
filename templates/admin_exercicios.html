@@ -24,9 +24,9 @@
       {% for e in itens %}
       <tr>
         <td><strong>{{ e['nome'] }}</strong></td>
-        <td>{{ e['grupo'] }}</td>
-        <td>{{ e['equipamento'].replace('_',' ') }}</td>
-        <td>{{ e['nivel'] }}</td>
+        <td>{{ GRUPO_LABELS.get(e['grupo'], e['grupo']) }}</td>
+        <td>{{ EQUIP_LABELS.get(e['equipamento'], e['equipamento'].replace('_',' ')) }}</td>
+        <td>{{ NIVEL_LABELS.get(e['nivel'], e['nivel']) }}</td>
         <td>
           {% for c in (e['contraindicado_para'] or '').split(',') if c %}
           <span class="tag tag-limite">{{ LIMIT_LABELS.get(c, c) }}</span>
@@ -51,18 +51,18 @@
       <label class="campo"><span>Grupo *</span>
         <select name="grupo" required>
           {% for g in ['peito','costas','ombros','biceps','triceps','quadriceps','posterior','gluteo','panturrilha','core','cardio','mobilidade'] %}
-          <option value="{{ g }}">{{ g }}</option>
+          <option value="{{ g }}">{{ GRUPO_LABELS.get(g, g) }}</option>
           {% endfor %}
         </select></label>
       <label class="campo"><span>Equipamento</span>
         <select name="equipamento">
           {% for e in ['peso_corporal','halteres','barra','maquina','cabo','cardio'] %}
-          <option value="{{ e }}">{{ e.replace('_',' ') }}</option>
+          <option value="{{ e }}">{{ EQUIP_LABELS.get(e, e.replace('_',' ')) }}</option>
           {% endfor %}
         </select></label>
       <label class="campo"><span>Nível</span>
         <select name="nivel">
-          {% for n in ['iniciante','intermediario','avancado'] %}<option value="{{ n }}">{{ n }}</option>{% endfor %}
+          {% for n in ['iniciante','intermediario','avancado'] %}<option value="{{ n }}">{{ NIVEL_LABELS.get(n, n) }}</option>{% endfor %}
         </select></label>
     </div>
     <div class="campo"><span>Contraindicado para (pode marcar mais de um)</span>
