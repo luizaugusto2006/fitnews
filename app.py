@@ -5,9 +5,12 @@ import io
 import json
 import os
 import secrets
+import smtplib
 import string
 import sqlite3
+import time
 from datetime import date, datetime
+from email.message import EmailMessage
 
 from flask import (Flask, Response, abort, flash, jsonify, redirect,
                    render_template, request, session, url_for)
@@ -24,6 +27,8 @@ app.secret_key = os.environ.get("SECRET_KEY", "fitnews-dev-key-troque-em-produca
 
 ADMIN_USER = os.environ.get("ADMIN_USER", "admin")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "19160731")
+
+SITE_URL = os.environ.get("SITE_URL", "https://fitnews.pythonanywhere.com").rstrip("/")
 
 NIVEIS = [("iniciante", "Iniciante (nunca treinei ou até 6 meses)"),
           ("intermediario", "Intermediário (6 meses a 2 anos)"),
@@ -154,6 +159,36 @@ def _gerar_codigo_recuperacao():
         conn.close()
         if not existe:
             return codigo
+
+
+def _config_mail():
+    """Credenciais via variaveis de ambiente ou arquivo local mail_secreto.py."""
+    user = os.environ.get("MAIL_USER", "")
+    senha = os.environ.get("MAIL_PASSWORD", "")
+    if not user or not senha:
+        try:
+            import mail_secreto
+            user = user or getattr(mail_secreto, "MAIL_USER", "")
+            senha = senha or getattr(mail_secreto, "MAIL_PASSWORD", "")
+        except Exception:
+            pass
+    return user, senha
+
+
+def _enviar_email(para, assunto, corpo):
+    """Envia pelo Gmail (unico SMTP liberado no PythonAnywhere free)."""
+    user, senha = _config_mail()
+    if not user or not senha:
+        raise RuntimeError("MAIL_USER/MAIL_PASSWORD nao configurados")
+    msg = EmailMessage()
+    msg["From"] = os.environ.get("MAIL_FROM", user)
+    msg["To"] = para
+    msg["Subject"] = assunto
+    msg.set_content(corpo)
+    with smtplib.SMTP("smtp.gmail.com", 587, timeout=20) as servidor:
+        servidor.starttls()
+        servidor.login(user, senha)
+        servidor.send_message(msg)
 
 
 def _anexar_plano(token):
@@ -564,6 +599,38 @@ def sair():
 def recuperar():
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
+        # ---- opcao 1: link enviado por e-mail ----
+        if request.form.get("acao") == "enviar_link":
+            conn = get_db()
+            row = conn.execute("SELECT id FROM usuarios WHERE email=?",
+                               (email,)).fetchone()
+            if row:
+                token = secrets.token_urlsafe(24)
+                conn.execute("UPDATE usuarios SET reset_token=?, reset_expira=?"
+                             " WHERE id=?",
+                             (token, str(time.time() + 1800), row["id"]))
+                conn.commit()
+                link = f"{SITE_URL}/redefinir/{token}"
+                try:
+                    _enviar_email(
+                        email, "Redefinir sua senha - FitNews",
+                        "Ola!\n\nRecebemos um pedido para redefinir a senha da sua "
+                        "conta no FitNews.\n\nPara escolher uma nova senha, abra o "
+                        "link abaixo (valido por 30 minutos):\n\n"
+                        f"{link}\n\n"
+                        "Se nao foi voce, basta ignorar este email.\n"
+                        "Se o link nao abrir, copie e cole o endereco no navegador.\n")
+                except Exception:
+                    app.logger.exception("Falha ao enviar email de recuperacao")
+                    conn.close()
+                    flash("Não foi possível enviar o e-mail agora. Tente de novo em "
+                          "instantes ou use o código de recuperação.", "erro")
+                    return render_template("recuperar.html", email=email, codigo="")
+                conn.close()
+            flash("Se existir uma conta com este e-mail, enviamos um link para "
+                  "redefinir a senha. Confira a caixa de entrada e o spam.", "ok")
+            return render_template("recuperar.html", email=email, codigo="")
+        # ---- opcao 2: codigo REC mostrado no cadastro ----
         bruto = request.form.get("codigo", "")
         # aceita com/sem "REC-", maiusculas/minusculas e espacos
         limpo = "".join(ch for ch in bruto.upper() if ch.isascii() and ch.isalnum())
@@ -592,6 +659,39 @@ def recuperar():
               "exatamente como apareceu no cadastro (REC-...).", "erro")
         return render_template("recuperar.html", email=email, codigo=bruto)
     return render_template("recuperar.html", email="", codigo="")
+
+
+@app.route("/redefinir/<token>", methods=["GET", "POST"])
+def redefinir_senha(token):
+    conn = get_db()
+    row = conn.execute("SELECT id, reset_expira FROM usuarios WHERE reset_token=?",
+                       (token,)).fetchone()
+    valido = False
+    if row:
+        try:
+            valido = time.time() <= float(row["reset_expira"])
+        except (TypeError, ValueError):
+            valido = False
+    if not valido:
+        conn.close()
+        flash("Link inválido ou expirado. Solicite um novo em Recuperar senha.", "erro")
+        return redirect(url_for("recuperar"))
+    if request.method == "POST":
+        nova = request.form.get("senha", "")
+        if len(nova) < 6 or nova != request.form.get("senha2", ""):
+            flash("As senhas precisam ter pelo menos 6 caracteres e conferir.", "erro")
+        else:
+            conn.execute("UPDATE usuarios SET senha_hash=?, reset_token=NULL,"
+                         " reset_expira=NULL WHERE id=?",
+                         (generate_password_hash(nova), row["id"]))
+            conn.commit()
+            conn.close()
+            flash("Senha alterada! Entre com a nova senha.", "ok")
+            return redirect(url_for("entrar"))
+        conn.close()
+        return render_template("redefinir.html", token=token)
+    conn.close()
+    return render_template("redefinir.html", token=token)
 
 
 # ------------------------------------------------------------------

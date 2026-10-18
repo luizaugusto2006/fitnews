@@ -2,6 +2,7 @@
 """Smoke test do FitNews (executar: python test_site.py)"""
 import re
 
+import app as app_mod
 import database
 from app import app
 
@@ -344,6 +345,58 @@ r = c.post("/entrar", data={"email": "dono@fitnews.com", "senha": "senhaadmin1"}
            follow_redirects=True)
 print("  login com a senha dada pelo admin:", "Conta Teste" in r.get_data(as_text=True))
 assert "Conta Teste" in r.get_data(as_text=True)
+
+print("== Recuperacao por e-mail (envio simulado) ==")
+enviados = []
+app_mod._enviar_email = lambda para, assunto, corpo: enviados.append((para, corpo))
+r = c.post("/recuperar", data={"email": "dono@fitnews.com", "acao": "enviar_link"},
+           follow_redirects=True)
+hp = r.get_data(as_text=True)
+print("  link enviado ao e-mail certo:", bool(enviados) and enviados[0][0] == "dono@fitnews.com")
+assert enviados and enviados[0][0] == "dono@fitnews.com"
+print("  aviso generico nao revela conta:", "Se existir" in hp)
+assert "Se existir" in hp
+m = re.search(r"/redefinir/([A-Za-z0-9_\-]+)", enviados[0][1])
+assert m, "link de redefinicao ausente no e-mail"
+tok_r = m.group(1)
+enviados.clear()
+r = c.post("/recuperar", data={"email": "naoexiste@fitnews.com", "acao": "enviar_link"},
+           follow_redirects=True)
+print("  e-mail inexistente nao gera envio:", not enviados)
+assert not enviados and "Se existir" in r.get_data(as_text=True)
+# link valido -> nova senha
+r = c.post(f"/redefinir/{tok_r}", data={"senha": "emailnovo1", "senha2": "emailnovo1"},
+           follow_redirects=True)
+print("  link redefiniu a senha:", "Senha alterada" in r.get_data(as_text=True))
+assert "Senha alterada" in r.get_data(as_text=True)
+r = c.post("/entrar", data={"email": "dono@fitnews.com", "senha": "emailnovo1"},
+           follow_redirects=True)
+print("  login com a senha vinda do e-mail:", "Conta Teste" in r.get_data(as_text=True))
+assert "Conta Teste" in r.get_data(as_text=True)
+# link de uso unico
+r = c.get(f"/redefinir/{tok_r}", follow_redirects=True)
+print("  link de uso unico recusado:", "Link inválido" in r.get_data(as_text=True))
+assert "Link inválido" in r.get_data(as_text=True)
+# link expirado
+c.post("/recuperar", data={"email": "dono@fitnews.com", "acao": "enviar_link"})
+m = re.search(r"/redefinir/([A-Za-z0-9_\-]+)", enviados[-1][1])
+tok_x = m.group(1)
+conn = database.get_db()
+conn.execute("UPDATE usuarios SET reset_expira='0' WHERE email='dono@fitnews.com'")
+conn.commit()
+conn.close()
+r = c.get(f"/redefinir/{tok_x}", follow_redirects=True)
+print("  link expirado recusado:", "Link inválido" in r.get_data(as_text=True))
+assert "Link inválido" in r.get_data(as_text=True)
+# falha de envio avisa o usuario
+def _falha_envio(*args):
+    raise RuntimeError("smtp indisponivel no teste")
+app_mod._enviar_email = _falha_envio
+r = c.post("/recuperar", data={"email": "dono@fitnews.com", "acao": "enviar_link"},
+           follow_redirects=True)
+print("  falha de envio avisa o usuario:", "Não foi possível" in r.get_data(as_text=True))
+assert "Não foi possível" in r.get_data(as_text=True)
+app_mod._enviar_email = lambda *args: None
 
 print("== Data de nascimento digitada DD/MM/AAAA ==")
 r = c.post("/criar", data={

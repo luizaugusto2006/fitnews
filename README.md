@@ -68,6 +68,11 @@ sugeridos.
     depois em Meus planos; sem conta, basta guardar o link. Recuperação de senha por
     **código `REC-XXXXXX`** exibido no cadastro (o site não envia e-mails). O código
     do personal (`FIT-XXXXXX`) continua **opcional**.
+20. **Recuperação de senha por e-mail**: em `/recuperar`, o usuário pede um **link de
+    redefinição** enviado ao e-mail da conta (uso único, validade de 30 min) — só quem
+    tem acesso ao e-mail consegue usá-lo. Como alternativas continuam o código
+    `REC-XXXXXX` e o reset pelo painel admin. Configuração: ver
+    [Recuperação de senha por e-mail](#recuperação-de-senha-por-e-mail-opcional).
 
 ## Rodar localmente
 
@@ -90,6 +95,34 @@ python test_site.py
 - URL: `/admin` — usuário e senha definidos em `app.py` (`ADMIN_USER` e
   `ADMIN_PASSWORD`), podendo ser sobrescritos pelas variáveis de ambiente de
   mesmo nome (e defina uma `SECRET_KEY` forte em produção).
+
+## Recuperação de senha por e-mail (opcional)
+
+O envio usa **SMTP do Gmail** — o único servidor de e-mail liberado em contas
+grátis do PythonAnywhere (as contas grátis só acessam HTTP/HTTPS, o Gmail tem
+exceção). Passos:
+
+1. Em uma conta Gmail, ative a **Verificação em duas etapas** e crie uma
+   **senha de aplicativo** (16 caracteres): Gerenciar conta Google → Segurança →
+   Verificação em duas etapas → Senhas de app.
+2. Configure as credenciais (escolha **uma** forma):
+   - **Variáveis de ambiente** — no PythonAnywhere, abra *Web → Code → WSGI
+     configuration file* e adicione **antes** do `from app import ...`:
+     ```python
+     import os
+     os.environ["MAIL_USER"] = "seu.email@gmail.com"
+     os.environ["MAIL_PASSWORD"] = "abcdefghijklmnop"
+     ```
+   - **Ou arquivo local** `mail_secreto.py` na raiz do repositório (está no
+     `.gitignore`, nunca vai para o GitHub):
+     ```python
+     MAIL_USER = "seu.email@gmail.com"
+     MAIL_PASSWORD = "abcdefghijklmnop"
+     ```
+3. `git pull` + **Web → Reload**.
+
+Sem essa configuração o site continua funcionando: a recuperação fica pelo
+código `REC-XXXXXX` e pelo painel admin (que redefine senhas).
 
 ## Área do Personal
 

@@ -68,6 +68,8 @@ CREATE TABLE IF NOT EXISTS usuarios (
     email TEXT NOT NULL UNIQUE,
     senha_hash TEXT NOT NULL,
     codigo_recup TEXT NOT NULL UNIQUE,
+    reset_token TEXT,
+    reset_expira TEXT,
     criado_em TEXT NOT NULL DEFAULT (datetime('now', '-3 hours'))
 );
 """
@@ -78,6 +80,11 @@ MIGRACOES_PLANOS = [
     ("anotacoes", "ALTER TABLE planos ADD COLUMN anotacoes TEXT NOT NULL DEFAULT ''"),
     ("usuario_id", "ALTER TABLE planos ADD COLUMN usuario_id INTEGER"),
     ("token", "ALTER TABLE planos ADD COLUMN token TEXT"),
+]
+
+MIGRACOES_USUARIOS = [
+    ("reset_token", "ALTER TABLE usuarios ADD COLUMN reset_token TEXT"),
+    ("reset_expira", "ALTER TABLE usuarios ADD COLUMN reset_expira TEXT"),
 ]
 
 
@@ -93,6 +100,10 @@ def init_db():
     colunas = {r[1] for r in conn.execute("PRAGMA table_info(planos)")}
     for coluna, ddl in MIGRACOES_PLANOS:
         if coluna not in colunas:
+            conn.execute(ddl)
+    colunas_u = {r[1] for r in conn.execute("PRAGMA table_info(usuarios)")}
+    for coluna, ddl in MIGRACOES_USUARIOS:
+        if coluna not in colunas_u:
             conn.execute(ddl)
     # Correcao unica: bancos criados antes desta versao gravavam UTC no servidor
     # (PythonAnywhere). Se a maquina esta em UTC, desloca os horarios ja gravados

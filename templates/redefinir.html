@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Nova senha — FitNews{% endblock %}
+{% block content %}
+<section class="container pagina-form" style="max-width:440px">
+  <h1>Escolha uma nova senha</h1>
+  <p class="sub">Você está redefinindo a senha pelo link enviado ao seu e-mail.
+    O link serve uma única vez.</p>
+  <form method="post" class="formulario">
+    <label class="campo"><span>Nova senha (mínimo 6 caracteres)</span>
+      <input type="password" name="senha" required minlength="6" autocomplete="new-password"></label>
+    <label class="campo"><span>Repetir nova senha</span>
+      <input type="password" name="senha2" required minlength="6" autocomplete="new-password"></label>
+    <button class="btn btn-grande" type="submit">Alterar senha</button>
+  </form>
+  <p class="campo-ajuda"><a href="{{ url_for('recuperar') }}">← Pedir um novo link</a></p>
+</section>
+{% endblock %}

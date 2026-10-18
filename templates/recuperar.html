@@ -1,26 +1,42 @@
 {% extends "base.html" %}
 {% block title %}Recuperar senha — FitNews{% endblock %}
 {% block content %}
-<section class="container pagina-form" style="max-width:440px">
+<section class="container pagina-form" style="max-width:520px">
   <h1>Recuperar senha</h1>
+  <p class="sub">Escolha uma das duas formas abaixo.</p>
+
   <div class="aviso aviso-ok">
-    <strong>De onde vem o código?</strong> Este site não envia e-mails. Ao criar a
-    conta, mostramos <strong>uma única vez</strong> na tela "Conta criada!" um código
-    no formato <strong>REC-XXXXXX</strong> — era para tê-lo anotado. Informe o e-mail
-    da conta, esse código e escolha uma nova senha.
+    <strong>1. Receber link no seu e-mail (recomendado)</strong><br>
+    Enviamos um link que abre a tela para você escolher uma nova senha.
+    Só quem tem acesso ao e-mail da conta consegue usar o link.
+    Ele vale por 30 minutos.
   </div>
-  <p class="campo-ajuda">Perdeu o código? Fale com o administrador do site: ele pode
-    redefinir sua senha pelo painel (<a href="{{ url_for('admin_login') }}">/admin</a>).</p>
   <form method="post" class="formulario">
-    <label class="campo"><span>E-mail</span>
+    <input type="hidden" name="acao" value="enviar_link">
+    <label class="campo"><span>E-mail da conta</span>
+      <input type="email" name="email" required value="{{ email or '' }}" autocomplete="email"></label>
+    <button class="btn btn-grande" type="submit">Enviar link por e-mail</button>
+  </form>
+
+  <div class="aviso" style="margin-top:1.5rem">
+    <strong>2. Já tenho o código de recuperação</strong><br>
+    O código <strong>REC-XXXXXX</strong> foi mostrado <strong>uma única vez</strong>
+    na tela "Conta criada!" quando a conta foi criada.
+  </div>
+  <form method="post" class="formulario">
+    <label class="campo"><span>E-mail da conta</span>
       <input type="email" name="email" required value="{{ email or '' }}" autocomplete="email"></label>
     <label class="campo"><span>Código de recuperação</span>
       <input type="text" name="codigo" required value="{{ codigo or '' }}"
              placeholder="REC-XXXXXX" style="text-transform:uppercase" autocomplete="one-time-code"></label>
     <label class="campo"><span>Nova senha (mínimo 6 caracteres)</span>
       <input type="password" name="senha" required minlength="6" autocomplete="new-password"></label>
-    <button class="btn btn-grande" type="submit">Alterar senha</button>
+    <button class="btn btn-grande" type="submit">Alterar senha pelo código</button>
   </form>
-  <p class="campo-ajuda"><a href="{{ url_for('entrar') }}">← Voltar para entrar</a></p>
+
+  <p class="campo-ajuda">Não tem o código nem recebeu o e-mail? Fale com o
+    administrador do site: ele pode redefinir sua senha
+    (<a href="{{ url_for('admin_login') }}">/admin</a>).<br>
+    <a href="{{ url_for('entrar') }}">← Voltar para entrar</a></p>
 </section>
 {% endblock %}
