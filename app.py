@@ -144,7 +144,8 @@ def _gerar_token_plano():
 
 
 def _gerar_codigo_recuperacao():
-    alphabet = string.ascii_uppercase + string.digits
+    # sem I, L, O, 0, 1 para nao gerar duvida de leitura (1 x I, 0 x O)
+    alphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
     while True:
         codigo = "REC-" + "".join(secrets.choice(alphabet) for _ in range(6))
         conn = get_db()
@@ -563,14 +564,19 @@ def sair():
 def recuperar():
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
-        codigo = request.form.get("codigo", "").strip().upper()
-        if codigo and len(codigo) == 6:
-            codigo = "REC-" + codigo
+        bruto = request.form.get("codigo", "")
+        # aceita com/sem "REC-", maiusculas/minusculas e espacos
+        limpo = "".join(ch for ch in bruto.upper() if ch.isascii() and ch.isalnum())
+        if len(limpo) == 6:
+            codigo = "REC-" + limpo
+        elif len(limpo) == 9 and limpo.startswith("REC"):
+            codigo = "REC-" + limpo[3:]
+        else:
+            codigo = limpo
         nova = request.form.get("senha", "")
         if len(nova) < 6:
             flash("A nova senha precisa de pelo menos 6 caracteres.", "erro")
-            return render_template("recuperar.html", email=email,
-                                   codigo=request.form.get("codigo", ""))
+            return render_template("recuperar.html", email=email, codigo=bruto)
         conn = get_db()
         row = conn.execute("SELECT id FROM usuarios WHERE email=? AND codigo_recup=?",
                            (email, codigo)).fetchone()
@@ -582,9 +588,9 @@ def recuperar():
             flash("Senha alterada! Entre com a nova senha.", "ok")
             return redirect(url_for("entrar"))
         conn.close()
-        flash("E-mail ou código de recuperação inválidos.", "erro")
-        return render_template("recuperar.html", email=email,
-                               codigo=request.form.get("codigo", ""))
+        flash("E-mail ou código de recuperação inválidos. Confira o código "
+              "exatamente como apareceu no cadastro (REC-...).", "erro")
+        return render_template("recuperar.html", email=email, codigo=bruto)
     return render_template("recuperar.html", email="", codigo="")
 
 

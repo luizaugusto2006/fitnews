@@ -310,6 +310,19 @@ r = c.post("/recuperar", data={"email": "dono@fitnews.com", "codigo": "REC-ERRAD
 print("  codigo errado recusado:", "código de recuperação inválidos" in r.get_data(as_text=True))
 assert "código de recuperação inválidos" in r.get_data(as_text=True)
 
+# codigo digitado sem "REC-", em minusculas e com espacos tambem vale
+codigo_simples = recup.replace("REC-", "").lower()
+r = c.post("/recuperar", data={"email": "dono@fitnews.com",
+                               "codigo": "  " + codigo_simples + " ",
+                               "senha": "senhafina1"}, follow_redirects=True)
+ok_flex = "Senha alterada" in r.get_data(as_text=True)
+print("  codigo sem REC- / minusculo / com espacos:", ok_flex)
+assert ok_flex, "codigo flexivel nao foi aceito"
+r = c.post("/entrar", data={"email": "dono@fitnews.com", "senha": "senhafina1"},
+           follow_redirects=True)
+assert "Conta Teste" in r.get_data(as_text=True)
+print("  login com a senha alterada pelo codigo flexivel: True")
+
 print("== Data de nascimento digitada DD/MM/AAAA ==")
 r = c.post("/criar", data={
     "nome": "Data Brasileira", "sexo": "outro", "data_nascimento": "15/07/1985",
