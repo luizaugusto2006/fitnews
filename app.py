@@ -814,8 +814,28 @@ def admin_painel():
     n_pl = conn.execute("SELECT COUNT(*) c FROM planos").fetchone()["c"]
     planos = conn.execute("SELECT id, token, nome, criado_em FROM planos"
                           " ORDER BY id DESC LIMIT 20").fetchall()
+    usuarios = conn.execute("SELECT id, email, criado_em FROM usuarios"
+                            " ORDER BY id DESC").fetchall()
     conn.close()
-    return render_template("admin_painel.html", n_ex=n_ex, n_pl=n_pl, planos=planos)
+    return render_template("admin_painel.html", n_ex=n_ex, n_pl=n_pl, planos=planos,
+                           usuarios=usuarios)
+
+
+@app.route("/admin/usuario/<int:uid>/senha", methods=["POST"])
+def admin_usuario_senha(uid):
+    if not admin_requerido():
+        return redirect(url_for("admin_login"))
+    nova = request.form.get("senha", "")
+    if len(nova) < 6:
+        flash("A nova senha precisa de pelo menos 6 caracteres.", "erro")
+    else:
+        conn = get_db()
+        conn.execute("UPDATE usuarios SET senha_hash=? WHERE id=?",
+                     (generate_password_hash(nova), uid))
+        conn.commit()
+        conn.close()
+        flash("Senha do usuário redefinida.", "ok")
+    return redirect(url_for("admin_painel"))
 
 
 def _csv_response(nome_arquivo, cabecalho, linhas):

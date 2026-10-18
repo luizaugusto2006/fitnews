@@ -323,6 +323,28 @@ r = c.post("/entrar", data={"email": "dono@fitnews.com", "senha": "senhafina1"},
 assert "Conta Teste" in r.get_data(as_text=True)
 print("  login com a senha alterada pelo codigo flexivel: True")
 
+# admin redefinir senha de quem perdeu o codigo de recuperacao
+conn = database.get_db()
+uid = conn.execute("SELECT id FROM usuarios WHERE email='dono@fitnews.com'"
+                   ).fetchone()["id"]
+conn.close()
+r = c.post(f"/admin/usuario/{uid}/senha", data={"senha": "curta"},
+           follow_redirects=True)
+print("  admin: senha curta recusada:", "pelo menos 6 caracteres" in r.get_data(as_text=True))
+assert "pelo menos 6 caracteres" in r.get_data(as_text=True)
+r = c.get("/admin/painel")
+print("  admin lista as contas:", "dono@fitnews.com" in r.get_data(as_text=True))
+assert "dono@fitnews.com" in r.get_data(as_text=True)
+r = c.post(f"/admin/usuario/{uid}/senha", data={"senha": "senhaadmin1"},
+           follow_redirects=True)
+print("  admin redefiniu a senha:", "redefinida" in r.get_data(as_text=True))
+assert "redefinida" in r.get_data(as_text=True)
+c.get("/sair")
+r = c.post("/entrar", data={"email": "dono@fitnews.com", "senha": "senhaadmin1"},
+           follow_redirects=True)
+print("  login com a senha dada pelo admin:", "Conta Teste" in r.get_data(as_text=True))
+assert "Conta Teste" in r.get_data(as_text=True)
+
 print("== Data de nascimento digitada DD/MM/AAAA ==")
 r = c.post("/criar", data={
     "nome": "Data Brasileira", "sexo": "outro", "data_nascimento": "15/07/1985",

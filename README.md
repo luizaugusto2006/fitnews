@@ -35,7 +35,8 @@ sugeridos.
    com dosagem indicativa e avisos.
 8. **Meus planos** (`/planos`) — lista **apenas os planos da sua conta** (exige login).
 9. **Painel admin** — CRUD simples da base de exercícios (adicionar/editar/excluir,
-   marcar contraindicações) e dos planos gerados.
+   marcar contraindicações) e dos planos gerados; **lista as contas de usuário e
+   redefine senhas** (saída para quem perdeu o código `REC-XXXXXX`).
 10. **Área do Personal Trainer** (`/personal`):
     - Cadastro (nome, e-mail, senha) e login com sessão própria;
     - Gera um **código de vínculo** `FIT-XXXXXX` (com botão "Copiar");

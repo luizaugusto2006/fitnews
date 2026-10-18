@@ -41,5 +41,30 @@
     </tbody>
   </table>
   {% else %}<p>Nenhum plano ainda.</p>{% endif %}
+
+  <h2 style="margin-top:2rem">Contas de usuário</h2>
+  <p class="campo-ajuda">Redefina a senha de quem perdeu o código de recuperação
+    (o site não envia e-mails) e informe a nova senha para a pessoa.</p>
+  {% if usuarios %}
+  <table class="tabela-ex" style="margin-top:1rem">
+    <thead><tr><th>E-mail</th><th>Criada em</th><th>Redefinir senha</th></tr></thead>
+    <tbody>
+      {% for u in usuarios %}
+      <tr>
+        <td>{{ u['email'] }}</td>
+        <td>{{ u['criado_em'] }}</td>
+        <td>
+          <form method="post" action="{{ url_for('admin_usuario_senha', uid=u['id']) }}"
+                style="display:flex;gap:.4rem">
+            <input type="text" name="senha" required minlength="6" placeholder="nova senha"
+                   style="max-width:11rem">
+            <button class="btn btn-mini" type="submit">Redefinir</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<p>Nenhuma conta criada ainda.</p>{% endif %}
 </section>
 {% endblock %}

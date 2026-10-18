@@ -3,8 +3,14 @@
 {% block content %}
 <section class="container pagina-form" style="max-width:440px">
   <h1>Recuperar senha</h1>
-  <p class="sub">Informe o e-mail da conta e o código de recuperação (REC-XXXXXX)
-    recebido ao criar a conta.</p>
+  <div class="aviso aviso-ok">
+    <strong>De onde vem o código?</strong> Este site não envia e-mails. Ao criar a
+    conta, mostramos <strong>uma única vez</strong> na tela "Conta criada!" um código
+    no formato <strong>REC-XXXXXX</strong> — era para tê-lo anotado. Informe o e-mail
+    da conta, esse código e escolha uma nova senha.
+  </div>
+  <p class="campo-ajuda">Perdeu o código? Fale com o administrador do site: ele pode
+    redefinir sua senha pelo painel (<a href="{{ url_for('admin_login') }}">/admin</a>).</p>
   <form method="post" class="formulario">
     <label class="campo"><span>E-mail</span>
       <input type="email" name="email" required value="{{ email or '' }}" autocomplete="email"></label>
