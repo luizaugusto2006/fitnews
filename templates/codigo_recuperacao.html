@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Conta criada — FitNews{% endblock %}
+{% block content %}
+<section class="container pagina-form" style="max-width:480px">
+  <h1>Conta criada!</h1>
+  <p class="sub">Anote seu <strong>código de recuperação</strong> — é a única forma de
+    redefinir a senha, já que o site não envia e-mails.</p>
+  <div class="aviso aviso-ok" style="text-align:center">
+    <span style="font-size:1.5rem;letter-spacing:.15rem"><strong>{{ codigo }}</strong></span>
+  </div>
+  <p class="campo-ajuda">Guarde este código em local seguro: sem ele, a senha só
+    pode ser redefinida pelo administrador do site.</p>
+  <a class="btn btn-grande" href="{{ destino }}">Continuar</a>
+</section>
+{% endblock %}

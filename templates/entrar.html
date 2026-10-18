@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Entrar — FitNews{% endblock %}
+{% block content %}
+<section class="container pagina-form" style="max-width:440px">
+  <h1>Entrar</h1>
+  <p class="sub">Acesse os planos salvos na sua conta.</p>
+  <form method="post" class="formulario">
+    {% if plano %}<input type="hidden" name="plano" value="{{ plano }}">{% endif %}
+    {% if prox %}<input type="hidden" name="prox" value="{{ prox }}">{% endif %}
+    <label class="campo"><span>E-mail</span>
+      <input type="email" name="email" required value="{{ email or '' }}" autocomplete="email"></label>
+    <label class="campo"><span>Senha</span>
+      <input type="password" name="senha" required autocomplete="current-password"></label>
+    <button class="btn btn-grande" type="submit">Entrar</button>
+  </form>
+  <p class="campo-ajuda">
+    Ainda não tem conta? <a href="{{ url_for('conta', plano=plano or none, prox=prox or none) }}">Crie aqui</a>
+    · Esqueceu a senha? <a href="{{ url_for('recuperar') }}">Recuperar</a>
+  </p>
+</section>
+{% endblock %}

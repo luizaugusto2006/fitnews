@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Recuperar senha — FitNews{% endblock %}
+{% block content %}
+<section class="container pagina-form" style="max-width:440px">
+  <h1>Recuperar senha</h1>
+  <p class="sub">Informe o e-mail da conta e o código de recuperação (REC-XXXXXX)
+    recebido ao criar a conta.</p>
+  <form method="post" class="formulario">
+    <label class="campo"><span>E-mail</span>
+      <input type="email" name="email" required value="{{ email or '' }}" autocomplete="email"></label>
+    <label class="campo"><span>Código de recuperação</span>
+      <input type="text" name="codigo" required value="{{ codigo or '' }}"
+             placeholder="REC-XXXXXX" style="text-transform:uppercase" autocomplete="one-time-code"></label>
+    <label class="campo"><span>Nova senha (mínimo 6 caracteres)</span>
+      <input type="password" name="senha" required minlength="6" autocomplete="new-password"></label>
+    <button class="btn btn-grande" type="submit">Alterar senha</button>
+  </form>
+  <p class="campo-ajuda"><a href="{{ url_for('entrar') }}">← Voltar para entrar</a></p>
+</section>
+{% endblock %}

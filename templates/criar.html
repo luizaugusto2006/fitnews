@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% block title %}{{ 'Editar plano' if edicao_id else 'Criar plano de treino' }} — FitNews{% endblock %}
+{% block title %}{{ 'Editar plano' if edicao_token else 'Criar plano de treino' }} — FitNews{% endblock %}
 {% block content %}
 <section class="container pagina-form">
   <div class="cabecalho-form">
     <div>
-      <h1>{{ 'Editar plano de treino' if edicao_id else 'Criar plano de treino' }}</h1>
+      <h1>{{ 'Editar plano de treino' if edicao_token else 'Criar plano de treino' }}</h1>
       <p class="sub">Preencha os dados abaixo. Quanto mais completo, mais preciso fica o seu plano. Campos com <span class="obrig">*</span> são obrigatórios.</p>
     </div>
     <figure class="fig-branca tile-topo">
@@ -133,8 +133,8 @@
     </label>
 
     <div class="acoes">
-      <button type="submit" class="btn btn-grande">{{ 'Salvar alterações' if edicao_id else 'Gerar meu plano' }}</button>
-      {% if edicao_id %}<a href="{{ url_for('ver_plano', plano_id=edicao_id) }}" class="btn btn-fantasma btn-grande">Cancelar</a>{% endif %}
+      <button type="submit" class="btn btn-grande">{{ 'Salvar alterações' if edicao_token else 'Gerar meu plano' }}</button>
+      {% if edicao_token %}<a href="{{ url_for('ver_plano', plano_token=edicao_token) }}" class="btn btn-fantasma btn-grande">Cancelar</a>{% endif %}
     </div>
   </form>
 </section>

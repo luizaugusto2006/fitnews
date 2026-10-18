@@ -50,14 +50,14 @@
     <tbody>
       {% for p in meus %}
       <tr>
-        <td><a href="{{ url_for('ver_plano', plano_id=p['id']) }}"><strong>{{ p['nome'] }}</strong></a>
+        <td><a href="{{ url_for('ver_plano', plano_token=p['token']) }}"><strong>{{ p['nome'] }}</strong></a>
           {% if p['idade'] %}<br><small>{{ p['idade'] }} anos</small>{% endif %}</td>
         <td>{% for f in (p['focos'] or '').split(',') if f %}<span class="tag tag-foco">{{ FOCO_LABELS.get(f, f) }}</span> {% endfor %}</td>
         <td>{% for l in (p['limitacoes'] or '').split(',') if l and l != 'nenhuma' %}<span class="tag tag-limite">{{ LIMIT_LABELS.get(l, l) }}</span> {% else %}<small>—</small>{% endfor %}</td>
         <td>#{{ p['id'] }}</td>
         <td><small>{{ p['criado_em'] }}</small></td>
         <td class="td-acoes">
-          <a class="btn btn-mini" href="{{ url_for('ver_plano', plano_id=p['id']) }}">Ver séries</a>
+          <a class="btn btn-mini" href="{{ url_for('ver_plano', plano_token=p['token']) }}">Ver séries</a>
           <form method="post" action="{{ url_for('personal_desvincular', plano_id=p['id']) }}"
                 onsubmit="return confirm('Desvincular o plano #{{ p['id'] }}?')">
             <button class="btn btn-mini btn-fantasma" type="submit">Desvincular</button>
@@ -83,11 +83,11 @@
     <tbody>
       {% for p in sem_vinculo %}
       <tr>
-        <td><a href="{{ url_for('ver_plano', plano_id=p['id']) }}"><strong>{{ p['nome'] }}</strong></a></td>
+        <td><a href="{{ url_for('ver_plano', plano_token=p['token']) }}"><strong>{{ p['nome'] }}</strong></a></td>
         <td>{% for f in (p['focos'] or '').split(',') if f %}<span class="tag tag-foco">{{ FOCO_LABELS.get(f, f) }}</span> {% endfor %}</td>
         <td><small>{{ p['criado_em'] }}</small></td>
         <td class="td-acoes">
-          <a class="btn btn-mini btn-fantasma" href="{{ url_for('ver_plano', plano_id=p['id']) }}">Ver plano</a>
+          <a class="btn btn-mini btn-fantasma" href="{{ url_for('ver_plano', plano_token=p['token']) }}">Ver plano</a>
           <form method="post" action="{{ url_for('personal_vincular', plano_id=p['id']) }}">
             <button class="btn btn-mini" type="submit">Vincular</button>
           </form>

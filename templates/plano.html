@@ -21,8 +21,8 @@
       </p>
     </div>
     <div class="plano-acoes">
-      <a href="{{ url_for('editar_plano', plano_id=plano['id']) }}" class="btn">Editar foco / dados</a>
-      <a href="{{ url_for('plano_resumo', plano_id=plano['id']) }}" class="btn btn-fantasma">Resumo 1 página</a>
+      <a href="{{ url_for('editar_plano', plano_token=plano['token']) }}" class="btn">Editar foco / dados</a>
+      <a href="{{ url_for('plano_resumo', plano_token=plano['token']) }}" class="btn btn-fantasma">Resumo 1 página</a>
       <button type="button" class="btn btn-fantasma" onclick="window.print()">Imprimir</button>
     </div>
   </div>
@@ -34,8 +34,28 @@
       <button type="button" class="btn btn-peq btn-fantasma" id="btnCopiarLink">Copiar link do plano</button>
       <span id="linkCopiado" hidden>Link copiado!</span>
     </div>
+    <small class="campo-ajuda">Link secreto — quem tiver ele abre o plano. Guarde bem.</small>
     <div id="qrArea" hidden><div id="qrCodigo"></div><small class="campo-ajuda">Aponte a câmera para abrir o plano no celular.</small></div>
   </div>
+
+  {% if dono_usuario %}
+  <div class="aviso aviso-ok">
+    <strong>Salvo na sua conta.</strong> Ele aparece em <a href="{{ url_for('listar_planos') }}">Meus planos</a>.
+  </div>
+  {% elif sem_conta %}
+  <div class="aviso aviso-ok">
+    {% if eu_usuario %}
+      <strong>Plano sem conta.</strong> Salve-o para encontrá-lo em Meus planos.
+      <form method="post" action="{{ url_for('plano_salvar', plano_token=plano['token']) }}" style="display:inline">
+        <button class="btn btn-peq" type="submit">Salvar na minha conta</button>
+      </form>
+    {% else %}
+      <strong>Plano sem conta.</strong> Crie uma conta para encontrá-lo depois — ou guarde este link secreto.
+      <a class="btn btn-peq" href="{{ url_for('conta', plano=plano['token']) }}">Criar conta</a>
+      <a class="btn btn-peq btn-fantasma" href="{{ url_for('entrar', plano=plano['token']) }}">Já tenho conta</a>
+    {% endif %}
+  </div>
+  {% endif %}
 
   <div class="aviso aviso-seguranca">
     <strong>Aviso de segurança:</strong> {{ plano['dados']['aviso'] }}
@@ -227,8 +247,8 @@
   </div>
 
   <div class="acoes">
-    <a href="{{ url_for('editar_plano', plano_id=plano['id']) }}" class="btn">Alterar foco ou limitações</a>
-    <a href="{{ url_for('plano_resumo', plano_id=plano['id']) }}" class="btn btn-fantasma">Resumo 1 página</a>
+    <a href="{{ url_for('editar_plano', plano_token=plano['token']) }}" class="btn">Alterar foco ou limitações</a>
+    <a href="{{ url_for('plano_resumo', plano_token=plano['token']) }}" class="btn btn-fantasma">Resumo 1 página</a>
     <a href="{{ url_for('criar') }}" class="btn btn-fantasma">Criar outro plano</a>
     <a href="{{ url_for('listar_planos') }}" class="btn btn-fantasma">Meus planos</a>
   </div>
@@ -363,7 +383,7 @@
       artigo.querySelectorAll(".input-carga").forEach(function (i) {
         itens.push({ nome: i.dataset.ex, carga: i.value.trim() });
       });
-      fetch({{ ('/plano/' ~ plano['id'] ~ '/cargas')|tojson }}, {
+      fetch({{ ('/plano/' ~ plano['token'] ~ '/cargas')|tojson }}, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ itens: itens })
@@ -386,7 +406,7 @@
       document.getElementById("modalTitulo").textContent = "Trocar: " + atualSel;
       lista.innerHTML = "<p>Carregando opções…</p>";
       modal.hidden = false;
-      fetch({{ ('/plano/' ~ plano['id'] ~ '/alternativas')|tojson }} +
+      fetch({{ ('/plano/' ~ plano['token'] ~ '/alternativas')|tojson }} +
             "?grupo=" + encodeURIComponent(grupoSel))
         .then(function (r) { return r.json(); })
         .then(function (d) {
@@ -405,7 +425,7 @@
               document.getElementById("trocarAtual").value = atualSel;
               document.getElementById("trocarNovo").value = alt.nome;
               document.getElementById("formTrocar").action =
-                {{ ('/plano/' ~ plano['id'] ~ '/trocar')|tojson }};
+                {{ ('/plano/' ~ plano['token'] ~ '/trocar')|tojson }};
               document.getElementById("formTrocar").submit();
             });
             lista.appendChild(bnt);

@@ -32,7 +32,7 @@ sugeridos.
    ajuste ao objetivo (déficit/superávit).
 7. **Suplementos** — combinando base por idade + extras do foco + extras da limitação,
    com dosagem indicativa e avisos.
-8. **Meus planos** — listagem de todos os planos gerados.
+8. **Meus planos** (`/planos`) — lista **apenas os planos da sua conta** (exige login).
 9. **Painel admin** — CRUD simples da base de exercícios (adicionar/editar/excluir,
    marcar contraindicações) e dos planos gerados.
 10. **Área do Personal Trainer** (`/personal`):
@@ -53,13 +53,19 @@ sugeridos.
     **mesmo grupo já filtradas pelas limitações** (validadas no servidor).
 14. **Anotar cargas**: campo ao lado de cada exercício + "Salvar cargas" por dia
     (persiste no plano e aparece no resumo impresso).
-15. **Resumo 1 página** (`/plano/<id>/resumo`): ficha enxuta para imprimir/salvar PDF.
+15. **Resumo 1 página** (`/plano/<token>/resumo`): ficha enxuta para imprimir/salvar PDF.
 16. **Política de Privacidade (LGPD)** em `/privacidade` + aceite obrigatório no formulário.
 17. **Backup CSV** no admin: `Baixar planos` e `Baixar exercícios` (UTF-8 com BOM, abre no Excel).
 18. **Padrão celular (mobile-first):** menu hambúrguer, tabelas de treino em cartões,
     abas com rolagem horizontal, botões grandes (alvo de toque ≥44px), inputs em 16px
     (sem zoom automático no iOS), meta tags de app (theme-color, standalone) e
     layout de uma coluna abaixo de 768px.
+19. **Contas de usuário e link secreto**: cada plano nasce com um **link secreto**
+    `/plano/<token>` (sem IDs sequenciais — quem não tem o link não abre). O criador
+    pode **salvar o plano em uma conta** (`/conta`: e-mail + senha) para encontrá-lo
+    depois em Meus planos; sem conta, basta guardar o link. Recuperação de senha por
+    **código `REC-XXXXXX`** exibido no cadastro (o site não envia e-mails). O código
+    do personal (`FIT-XXXXXX`) continua **opcional**.
 
 ## Rodar localmente
 

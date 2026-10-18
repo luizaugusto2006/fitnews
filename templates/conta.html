@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Criar conta — FitNews{% endblock %}
+{% block content %}
+<section class="container pagina-form" style="max-width:440px">
+  <h1>Crie sua conta</h1>
+  <p class="sub">Para encontrar seus planos depois, em qualquer dispositivo.</p>
+  <form method="post" class="formulario">
+    {% if plano %}<input type="hidden" name="plano" value="{{ plano }}">{% endif %}
+    {% if prox %}<input type="hidden" name="prox" value="{{ prox }}">{% endif %}
+    <label class="campo"><span>E-mail <span class="obrig">*</span></span>
+      <input type="email" name="email" required value="{{ email or '' }}" autocomplete="email"></label>
+    <label class="campo"><span>Senha (mínimo 6 caracteres) <span class="obrig">*</span></span>
+      <input type="password" name="senha" required minlength="6" autocomplete="new-password"></label>
+    <label class="campo"><span>Repetir senha <span class="obrig">*</span></span>
+      <input type="password" name="senha2" required minlength="6" autocomplete="new-password"></label>
+    <label class="pill" style="display:flex;gap:.5rem;align-items:flex-start;margin:.6rem 0">
+      <input type="checkbox" name="aceite" value="sim" required style="margin-top:.25rem">
+      <span>Li e aceito a <a href="{{ url_for('privacidade') }}" target="_blank">Política de Privacidade (LGPD)</a>.</span>
+    </label>
+    <button class="btn btn-grande" type="submit">Criar minha conta</button>
+  </form>
+  <p class="campo-ajuda">
+    Já tem conta? <a href="{{ url_for('entrar', plano=plano or none, prox=prox or none) }}">Entrar</a>
+  </p>
+</section>
+{% endblock %}

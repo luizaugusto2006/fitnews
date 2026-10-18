@@ -2,13 +2,17 @@
 """Smoke test do FitNews (executar: python test_site.py)"""
 import re
 
+import database
 from app import app
 
 c = app.test_client()
 
 print("== Rotas publicas ==")
-for r in ["/", "/criar", "/planos", "/sobre", "/contato", "/admin"]:
+for r in ["/", "/criar", "/sobre", "/contato", "/admin"]:
     print(" ", r, c.get(r).status_code)
+r = c.get("/planos")
+print("  /planos (sem login) redireciona:", r.status_code == 302)
+assert r.status_code == 302, "lista de planos vazou sem login!"
 
 print("== Criar plano (hernia de disco + bico de papagaio) ==")
 resp = c.post("/criar", data={
@@ -21,6 +25,11 @@ resp = c.post("/criar", data={
 }, follow_redirects=True)
 html = resp.get_data(as_text=True)
 print("  status:", resp.status_code)
+
+conn = database.get_db()
+tok1 = conn.execute("SELECT token FROM planos WHERE nome='Teste Silva'"
+                    " ORDER BY id LIMIT 1").fetchone()["token"]
+conn.close()
 
 m = re.search(r'id="aba-treino"(.*?)<!-- ============ AQUECIMENTO', html, re.S)
 treino = m.group(1) if m else ""
@@ -49,7 +58,7 @@ print("  + aquecimento/alongamento/alimentacao/suplementos:",
       "Alimentação sugerida" in html, "Suplementos sugeridos" in html)
 
 print("== Editar foco (muda para bracos) ==")
-resp2 = c.post("/plano/1/editar", data={
+resp2 = c.post(f"/plano/{tok1}/editar", data={
     "nome": "Teste Silva", "sexo": "masculino", "data_nascimento": "1990-05-10",
     "peso": "80", "altura": "175", "atividade": "moderado",
     "nivel_treino": "intermediario", "dias": "3", "horario": "manha",
@@ -122,7 +131,6 @@ r = c.post("/criar", data={
 print("  codigo invalido recusado:", "não encontrado" in r.get_data(as_text=True))
 
 # anotacoes do personal
-import database  # noqa: E402
 conn = database.get_db()
 pid = conn.execute("SELECT id FROM planos WHERE nome='Maria Aluna'").fetchone()["id"]
 conn.close()
@@ -181,21 +189,21 @@ print("  CSV planos:", r.status_code == 200 and "text/csv" in r.headers.get("Con
 r = c.get("/admin/exportar/exercicios")
 print("  CSV exercicios:", r.status_code == 200 and "Supino" in r.get_data(as_text=True))
 
-r = c.get("/plano/1/resumo")
+r = c.get(f"/plano/{tok1}/resumo")
 print("  resumo 1 pagina:", r.status_code == 200 and "Resumo do treino" in r.get_data(as_text=True))
 
-r = c.get("/plano/1/alternativas?grupo=peito")
+r = c.get(f"/plano/{tok1}/alternativas?grupo=peito")
 alts = r.get_json()["alternativas"]
 novo_ex = alts[0]["nome"] if alts else ""
 print("  alternativas do mesmo grupo:", len(alts) > 0, "->", novo_ex)
-r = c.post("/plano/1/trocar", data={"atual": "Supino reto com barra", "novo": novo_ex},
+r = c.post(f"/plano/{tok1}/trocar", data={"atual": "Supino reto com barra", "novo": novo_ex},
            follow_redirects=True)
 hp = r.get_data(as_text=True)
 print("  trocou exercicio:", novo_ex in hp and "<strong>Supino reto com barra</strong>" not in hp)
 
-r = c.post("/plano/1/cargas", json={"itens": [{"nome": novo_ex, "carga": "40kg"}]})
+r = c.post(f"/plano/{tok1}/cargas", json={"itens": [{"nome": novo_ex, "carga": "40kg"}]})
 print("  API cargas ok:", r.get_json().get("ok") is True)
-r = c.get("/plano/1")
+r = c.get(f"/plano/{tok1}")
 hp = r.get_data(as_text=True)
 print("  carga visivel no plano:", 'value="40kg"' in hp)
 print("  share/QR/timer no plano:", "btnWhats" in hp and "qrcode.min.js" in hp and "btn-timer" in hp)
@@ -208,6 +216,99 @@ hp = r.get_data(as_text=True)
 print("  filtro por limitacao:", "Maria Aluna" in hp and "Bruno Solto" not in hp)
 r = c.get("/personal/painel?q=Maria&foco=core")
 print("  busca + filtro juntos:", "Maria Aluna" in r.get_data(as_text=True))
+
+print("== Contas de usuario (Plano B) ==")
+# /planos exige login
+r = c.get("/planos")
+print("  /planos sem login -> 302:", r.status_code == 302)
+assert r.status_code == 302, "lista de planos vazou sem login!"
+
+# cria um plano anonimo (sem dono)
+c.post("/criar", data={
+    "nome": "Conta Teste", "sexo": "feminino", "data_nascimento": "1992-05-05",
+    "peso": "55", "altura": "160", "atividade": "moderado",
+    "nivel_treino": "iniciante", "dias": "3", "local": "academia",
+    "focos": ["core"], "aceite": "sim", "aceite_privacidade": "sim",
+}, follow_redirects=True)
+conn = database.get_db()
+tok2 = conn.execute("SELECT token FROM planos WHERE nome='Conta Teste'"
+                    " ORDER BY id DESC LIMIT 1").fetchone()["token"]
+conn.close()
+
+# plano sem conta pede para criar acesso
+r = c.get(f"/plano/{tok2}")
+hp = r.get_data(as_text=True)
+print("  banner criar conta no plano:", "Plano sem conta" in hp and "Criar conta" in hp)
+assert "Plano sem conta" in hp, "banner de conta ausente"
+
+# cadastro liga o plano a conta + mostra codigo de recuperacao
+r = c.post("/conta", data={"email": "dono@fitnews.com", "senha": "senhas12",
+                           "senha2": "senhas12", "aceite": "sim", "plano": tok2})
+hp = r.get_data(as_text=True)
+m = re.search(r"(REC-[A-Z0-9]{6})", hp)
+recup = m.group(1) if m else ""
+print("  cadastro -> codigo de recuperacao:", recup or "AUSENTE")
+assert recup, "codigo de recuperacao nao gerado"
+conn = database.get_db()
+dono = conn.execute("SELECT usuario_id FROM planos WHERE token=?",
+                    (tok2,)).fetchone()
+conn.close()
+print("  plano ligado a conta:", dono["usuario_id"] is not None)
+assert dono["usuario_id"] is not None, "plano nao anexado a conta"
+
+# /planos mostra so os planos do dono
+r = c.get("/planos")
+hp = r.get_data(as_text=True)
+print("  meus planos visiveis:", "Conta Teste" in hp)
+print("  planos alheios fora:", "Bruno Solto" not in hp and "Maria Aluna" not in hp)
+print("  nav logado mostra Sair:", "Sair" in hp)
+assert "Conta Teste" in hp and "Bruno Solto" not in hp and "Maria Aluna" not in hp
+
+# salva o plano antigo (sem dono) na conta
+r = c.get(f"/plano/{tok1}")
+print("  plano antigo oferece salvar:", "Salvar na minha conta" in r.get_data(as_text=True))
+assert "Salvar na minha conta" in r.get_data(as_text=True)
+r = c.post(f"/plano/{tok1}/salvar", follow_redirects=True)
+conn = database.get_db()
+d1 = conn.execute("SELECT usuario_id FROM planos WHERE token=?",
+                  (tok1,)).fetchone()
+conn.close()
+print("  salvar na conta:", d1["usuario_id"] is not None)
+assert d1["usuario_id"] is not None
+r = c.get("/planos")
+hp = r.get_data(as_text=True)
+print("  dois planos na lista:", "Teste Silva" in hp and "Conta Teste" in hp)
+assert "Teste Silva" in hp
+
+# URL antiga por id sequencial nao abre mais
+r = c.get("/plano/1")
+print("  url antiga /plano/1 -> 404:", r.status_code == 404)
+assert r.status_code == 404, "url antiga por id continuou funcionando!"
+
+# logout devolve a protecao
+c.get("/sair")
+r = c.get("/planos")
+print("  apos sair /planos -> 302:", r.status_code == 302)
+assert r.status_code == 302
+
+# recuperacao de senha com o codigo
+r = c.post("/recuperar", data={"email": "dono@fitnews.com", "codigo": recup,
+                               "senha": "novasenha"}, follow_redirects=True)
+print("  recuperar -> senha alterada:", "Senha alterada" in r.get_data(as_text=True))
+assert "Senha alterada" in r.get_data(as_text=True)
+r = c.post("/entrar", data={"email": "dono@fitnews.com", "senha": "senhas12"},
+           follow_redirects=True)
+print("  senha antiga nao entra:", "inválidos" in r.get_data(as_text=True))
+assert "inválidos" in r.get_data(as_text=True)
+r = c.post("/entrar", data={"email": "dono@fitnews.com", "senha": "novasenha"},
+           follow_redirects=True)
+hp = r.get_data(as_text=True)
+print("  senha nova entra:", r.status_code == 200 and "Conta Teste" in hp)
+assert r.status_code == 200 and "Conta Teste" in hp
+r = c.post("/recuperar", data={"email": "dono@fitnews.com", "codigo": "REC-ERRADO",
+                               "senha": "outrasenha1"}, follow_redirects=True)
+print("  codigo errado recusado:", "código de recuperação inválidos" in r.get_data(as_text=True))
+assert "código de recuperação inválidos" in r.get_data(as_text=True)
 
 print()
 print("TODOS OS TESTES PASSARAM" if falhas == 0 else "HOUVE FALHAS")

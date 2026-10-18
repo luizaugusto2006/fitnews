@@ -96,6 +96,66 @@ def ler_formulario(form):
 
 
 # ------------------------------------------------------------------
+# Contas de usuario (dono dos planos)
+# ------------------------------------------------------------------
+def usuario_logado():
+    uid = session.get("usuario_id")
+    if not uid:
+        return None
+    conn = get_db()
+    row = conn.execute("SELECT * FROM usuarios WHERE id=?", (uid,)).fetchone()
+    conn.close()
+    if not row:
+        session.pop("usuario_id", None)
+        return None
+    return dict(row)
+
+
+def _gerar_token_plano():
+    while True:
+        token = secrets.token_urlsafe(9)
+        conn = get_db()
+        existe = conn.execute("SELECT 1 FROM planos WHERE token=?",
+                              (token,)).fetchone()
+        conn.close()
+        if not existe:
+            return token
+
+
+def _gerar_codigo_recuperacao():
+    alphabet = string.ascii_uppercase + string.digits
+    while True:
+        codigo = "REC-" + "".join(secrets.choice(alphabet) for _ in range(6))
+        conn = get_db()
+        existe = conn.execute("SELECT 1 FROM usuarios WHERE codigo_recup=?",
+                              (codigo,)).fetchone()
+        conn.close()
+        if not existe:
+            return codigo
+
+
+def _anexar_plano(token):
+    """Liga um plano sem dono ao usuario da sessao."""
+    uid = session.get("usuario_id")
+    if not uid or not token:
+        return False
+    conn = get_db()
+    cur = conn.execute(
+        "UPDATE planos SET usuario_id=? WHERE token=? AND usuario_id IS NULL",
+        (uid, token))
+    conn.commit()
+    conn.close()
+    return cur.rowcount > 0
+
+
+def _prox_seguro(valor):
+    """Evita redirect para fora do site (open redirect)."""
+    if valor and valor.startswith("/") and not valor.startswith("//"):
+        return valor
+    return url_for("listar_planos")
+
+
+# ------------------------------------------------------------------
 # Paginas publicas
 # ------------------------------------------------------------------
 @app.route("/")
@@ -132,33 +192,36 @@ def criar():
                                    limitacoes=LIMITACOES, niveis=NIVEIS,
                                    atividades=ATIVIDADES, horarios=HORARIOS)
         plano_json = gerar_plano(dados)
+        token = _gerar_token_plano()
         conn = get_db()
         cur = conn.execute(
             "INSERT INTO planos (nome, sexo, data_nascimento, idade, email, telefone,"
             " peso, altura, imc, atividade, nivel_treino, dias, horario, local,"
-            " limitacoes, focos, observacoes, personal_id, dados_json)"
-            " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            " limitacoes, focos, observacoes, personal_id, usuario_id, token, dados_json)"
+            " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (dados["nome"], dados["sexo"], dados["data_nascimento"], dados["idade"],
              dados["email"], dados["telefone"], dados["peso"], dados["altura"],
              dados["imc"], dados["atividade"], dados["nivel_treino"], dados["dias"],
              dados["horario"], dados["local"], ",".join(dados["limitacoes"]),
              ",".join(dados["focos"]), dados["observacoes"], personal_id,
+             session.get("usuario_id"), token,
              json.dumps(plano_json, ensure_ascii=False)),
         )
-        pid = cur.lastrowid
         conn.commit()
         conn.close()
         session.pop("personal_novo", None)
-        return redirect(url_for("ver_plano", plano_id=pid))
+        return redirect(url_for("ver_plano", plano_token=token))
     if session.get("personal_novo"):
         flash("Novo plano: ele será vinculado automaticamente à sua conta de personal.", "ok")
-    return render_template("criar.html", dados={}, focos=FOCOS, limitacoes=LIMITACOES,
+    eu = usuario_logado()
+    return render_template("criar.html", dados={"email": eu["email"]} if eu else {},
+                           focos=FOCOS, limitacoes=LIMITACOES,
                            niveis=NIVEIS, atividades=ATIVIDADES, horarios=HORARIOS)
 
 
-def _carregar_plano(plano_id):
+def _carregar_plano(plano_token):
     conn = get_db()
-    row = conn.execute("SELECT * FROM planos WHERE id=?", (plano_id,)).fetchone()
+    row = conn.execute("SELECT * FROM planos WHERE token=?", (plano_token,)).fetchone()
     conn.close()
     if not row:
         abort(404)
@@ -171,9 +234,9 @@ def _carregar_plano(plano_id):
     return plano
 
 
-@app.route("/plano/<int:plano_id>")
-def ver_plano(plano_id):
-    plano = _carregar_plano(plano_id)
+@app.route("/plano/<plano_token>")
+def ver_plano(plano_token):
+    plano = _carregar_plano(plano_token)
     personal_nome, sou_dono = None, False
     if plano.get("personal_id"):
         conn = get_db()
@@ -182,24 +245,43 @@ def ver_plano(plano_id):
         conn.close()
         personal_nome = row["nome"] if row else None
         sou_dono = session.get("personal_id") == plano["personal_id"]
-    return render_template("plano.html", plano=plano, FOCO_LABELS=FOCO_LABELS,
-                           LIMIT_LABELS=LIMIT_LABELS, date=date,
-                           personal_nome=personal_nome, sou_dono=sou_dono,
-                           plano_url=url_for("ver_plano", plano_id=plano_id,
-                                             _external=True))
+    eu_usuario = usuario_logado()
+    dono_usuario = bool(eu_usuario and plano.get("usuario_id") == eu_usuario["id"])
+    return render_template(
+        "plano.html", plano=plano, FOCO_LABELS=FOCO_LABELS,
+        LIMIT_LABELS=LIMIT_LABELS, date=date,
+        personal_nome=personal_nome, sou_dono=sou_dono,
+        eu_usuario=eu_usuario, dono_usuario=dono_usuario,
+        sem_conta=plano.get("usuario_id") is None,
+        plano_url=url_for("ver_plano", plano_token=plano_token, _external=True))
 
 
-@app.route("/plano/<int:plano_id>/resumo")
-def plano_resumo(plano_id):
-    plano = _carregar_plano(plano_id)
+@app.route("/plano/<plano_token>/resumo")
+def plano_resumo(plano_token):
+    plano = _carregar_plano(plano_token)
     return render_template("resumo.html", plano=plano, FOCO_LABELS=FOCO_LABELS,
                            LIMIT_LABELS=LIMIT_LABELS)
 
 
-@app.route("/plano/<int:plano_id>/alternativas")
-def plano_alternativas(plano_id):
+@app.route("/plano/<plano_token>/salvar", methods=["POST"])
+def plano_salvar(plano_token):
+    """Salva um plano sem dono na conta do usuario da sessao."""
+    plano = _carregar_plano(plano_token)
+    if not session.get("usuario_id"):
+        return redirect(url_for("entrar", plano=plano_token))
+    if plano["usuario_id"] == session.get("usuario_id"):
+        flash("Este plano já está na sua conta.", "ok")
+    elif plano["usuario_id"]:
+        flash("Este plano já pertence a outra conta.", "erro")
+    elif _anexar_plano(plano_token):
+        flash("Plano salvo na sua conta! Ele agora aparece em Meus planos.", "ok")
+    return redirect(url_for("ver_plano", plano_token=plano_token))
+
+
+@app.route("/plano/<plano_token>/alternativas")
+def plano_alternativas(plano_token):
     """Exercicios permitidos do mesmo grupo (ja filtrados pelas limitacoes)."""
-    plano = _carregar_plano(plano_id)
+    plano = _carregar_plano(plano_token)
     grupo = request.args.get("grupo", "")
     limitacoes = [l for l in plano["limitacoes_lista"] if l != "nenhuma"]
     permitidos, _ = banco_exercicios(limitacoes, plano["nivel_treino"], plano["local"])
@@ -225,9 +307,9 @@ def _salvar_dados(plano_id, dados):
     conn.close()
 
 
-@app.route("/plano/<int:plano_id>/trocar", methods=["POST"])
-def plano_trocar(plano_id):
-    plano = _carregar_plano(plano_id)
+@app.route("/plano/<plano_token>/trocar", methods=["POST"])
+def plano_trocar(plano_token):
+    plano = _carregar_plano(plano_token)
     dados = plano["dados"]
     atual, novo = request.form.get("atual", ""), request.form.get("novo", "")
     alvo = None
@@ -237,7 +319,7 @@ def plano_trocar(plano_id):
                 alvo = e
     if not alvo:
         flash("Exercício original não encontrado no plano.", "erro")
-        return redirect(url_for("ver_plano", plano_id=plano_id))
+        return redirect(url_for("ver_plano", plano_token=plano_token))
     # valida o novo exercicio: existe, mesmo grupo e permitido para as limitacoes
     limitacoes = [l for l in plano["limitacoes_lista"] if l != "nenhuma"]
     permitidos, _ = banco_exercicios(limitacoes, plano["nivel_treino"], plano["local"])
@@ -247,24 +329,24 @@ def plano_trocar(plano_id):
                       if e["nome"] == novo and e["grupo"] == alvo["grupo"]), None)
     if not escolhido:
         flash("Esse exercício não está disponível para as suas limitações.", "erro")
-        return redirect(url_for("ver_plano", plano_id=plano_id))
+        return redirect(url_for("ver_plano", plano_token=plano_token))
     usados = {e["nome"] for dia in dados.get("dias", [])
               for e in dia.get("exercicios", [])}
     if novo in usados and novo != atual:
         flash("Esse exercício já está no seu plano.", "erro")
-        return redirect(url_for("ver_plano", plano_id=plano_id))
+        return redirect(url_for("ver_plano", plano_token=plano_token))
     alvo["nome"] = escolhido["nome"]
     alvo["equipamento"] = escolhido["equipamento"]
     alvo["nivel"] = escolhido["nivel"]
     alvo.pop("carga", None)
-    _salvar_dados(plano_id, dados)
+    _salvar_dados(plano["id"], dados)
     flash(f"Exercício trocado por: {novo}.", "ok")
-    return redirect(url_for("ver_plano", plano_id=plano_id))
+    return redirect(url_for("ver_plano", plano_token=plano_token))
 
 
-@app.route("/plano/<int:plano_id>/cargas", methods=["POST"])
-def plano_cargas(plano_id):
-    plano = _carregar_plano(plano_id)
+@app.route("/plano/<plano_token>/cargas", methods=["POST"])
+def plano_cargas(plano_token):
+    plano = _carregar_plano(plano_token)
     dados = plano["dados"]
     payload = request.get_json(silent=True) or {}
     itens = payload.get("itens", [])
@@ -284,20 +366,25 @@ def plano_cargas(plano_id):
                     else:
                         e.pop("carga", None)
                     alterados += 1
-    _salvar_dados(plano_id, dados)
+    _salvar_dados(plano["id"], dados)
     return jsonify({"ok": True, "alterados": alterados})
 
 
 @app.route("/planos")
 def listar_planos():
+    uid = session.get("usuario_id")
+    if not uid:
+        return redirect(url_for("entrar", prox="/planos"))
     conn = get_db()
-    rows = conn.execute("SELECT id, nome, idade, focos, dias, criado_em FROM planos"
-                        " ORDER BY id DESC").fetchall()
+    rows = conn.execute("SELECT id, token, nome, idade, focos, dias, criado_em"
+                        " FROM planos WHERE usuario_id=? ORDER BY id DESC",
+                        (uid,)).fetchall()
     conn.close()
     itens = []
     for r in rows:
         itens.append({
-            "id": r["id"], "nome": r["nome"], "idade": r["idade"], "dias": r["dias"],
+            "id": r["id"], "token": r["token"], "nome": r["nome"],
+            "idade": r["idade"], "dias": r["dias"],
             "focos": ", ".join(FOCO_LABELS.get(f, f)
                                for f in (r["focos"] or "").split(",") if f),
             "criado_em": r["criado_em"],
@@ -305,9 +392,9 @@ def listar_planos():
     return render_template("planos.html", itens=itens)
 
 
-@app.route("/plano/<int:plano_id>/editar", methods=["GET", "POST"])
-def editar_plano(plano_id):
-    plano = _carregar_plano(plano_id)
+@app.route("/plano/<plano_token>/editar", methods=["GET", "POST"])
+def editar_plano(plano_token):
+    plano = _carregar_plano(plano_token)
     if request.method == "POST":
         dados, erros = ler_formulario(request.form)
         if erros:
@@ -316,7 +403,7 @@ def editar_plano(plano_id):
             return render_template("criar.html", dados=dados, focos=FOCOS,
                                    limitacoes=LIMITACOES, niveis=NIVEIS,
                                    atividades=ATIVIDADES, horarios=HORARIOS,
-                                   edicao_id=plano_id)
+                                   edicao_token=plano_token)
         plano_json = gerar_plano(dados, anterior=plano["dados"])
         conn = get_db()
         conn.execute(
@@ -329,12 +416,12 @@ def editar_plano(plano_id):
              dados["imc"], dados["atividade"], dados["nivel_treino"], dados["dias"],
              dados["horario"], dados["local"], ",".join(dados["limitacoes"]),
              ",".join(dados["focos"]), dados["observacoes"],
-             json.dumps(plano_json, ensure_ascii=False), plano_id),
+             json.dumps(plano_json, ensure_ascii=False), plano["id"]),
         )
         conn.commit()
         conn.close()
         flash("Plano atualizado! Somente o que mudou foi substituído.", "ok")
-        return redirect(url_for("ver_plano", plano_id=plano_id))
+        return redirect(url_for("ver_plano", plano_token=plano_token))
     # GET: preenche o formulario com os dados atuais
     d = plano
     dados = {
@@ -349,7 +436,7 @@ def editar_plano(plano_id):
     return render_template("criar.html", dados=dados, focos=FOCOS,
                            limitacoes=LIMITACOES, niveis=NIVEIS,
                            atividades=ATIVIDADES, horarios=HORARIOS,
-                           edicao_id=plano_id)
+                           edicao_token=plano_token)
 
 
 @app.route("/sobre")
@@ -365,6 +452,119 @@ def contato():
 @app.route("/privacidade")
 def privacidade():
     return render_template("privacidade.html")
+
+
+# ------------------------------------------------------------------
+# Contas de usuario (entrar / criar / recuperar senha)
+# ------------------------------------------------------------------
+@app.route("/conta", methods=["GET", "POST"])
+def conta():
+    prox = request.args.get("prox", "")
+    plano = request.args.get("plano", "")
+    if request.method == "POST":
+        plano = request.form.get("plano", "")
+        prox = request.form.get("prox", "")
+        email = request.form.get("email", "").strip().lower()
+        senha = request.form.get("senha", "")
+        erros = []
+        if "@" not in email or len(email) < 5:
+            erros.append("Informe um e-mail válido.")
+        if len(senha) < 6:
+            erros.append("A senha precisa de pelo menos 6 caracteres.")
+        if senha != request.form.get("senha2", ""):
+            erros.append("As senhas não conferem.")
+        if request.form.get("aceite") != "sim":
+            erros.append("É preciso aceitar a Política de Privacidade.")
+        if erros:
+            for e in erros:
+                flash(e, "erro")
+            return render_template("conta.html", email=email, plano=plano, prox=prox)
+        codigo = _gerar_codigo_recuperacao()
+        conn = get_db()
+        try:
+            cur = conn.execute(
+                "INSERT INTO usuarios (email, senha_hash, codigo_recup) VALUES (?,?,?)",
+                (email, generate_password_hash(senha), codigo))
+            conn.commit()
+            session["usuario_id"] = cur.lastrowid
+        except sqlite3.IntegrityError:
+            conn.close()
+            flash("Já existe uma conta com este e-mail.", "erro")
+            return render_template("conta.html", email=email, plano=plano, prox=prox)
+        except Exception:
+            conn.close()
+            flash("Erro ao criar conta. Tente novamente.", "erro")
+            return render_template("conta.html", email=email, plano=plano, prox=prox)
+        conn.close()
+        _anexar_plano(plano)
+        if plano:
+            destino = url_for("ver_plano", plano_token=plano)
+        else:
+            destino = _prox_seguro(prox)
+        return render_template("codigo_recuperacao.html", codigo=codigo,
+                               destino=destino)
+    if session.get("usuario_id"):
+        return redirect(_prox_seguro(prox))
+    return render_template("conta.html", plano=plano, prox=prox, email="")
+
+
+@app.route("/entrar", methods=["GET", "POST"])
+def entrar():
+    prox = request.args.get("prox", "")
+    plano = request.args.get("plano", "")
+    if request.method == "POST":
+        plano = request.form.get("plano", "")
+        prox = request.form.get("prox", "")
+        email = request.form.get("email", "").strip().lower()
+        senha = request.form.get("senha", "")
+        conn = get_db()
+        row = conn.execute("SELECT * FROM usuarios WHERE email=?",
+                           (email,)).fetchone()
+        conn.close()
+        if row and check_password_hash(row["senha_hash"], senha):
+            session["usuario_id"] = row["id"]
+            _anexar_plano(plano)
+            flash("Bem-vindo(a) de volta!", "ok")
+            return redirect(_prox_seguro(prox))
+        flash("E-mail ou senha inválidos.", "erro")
+        return render_template("entrar.html", email=email, plano=plano, prox=prox)
+    return render_template("entrar.html", plano=plano, prox=prox, email="")
+
+
+@app.route("/sair")
+def sair():
+    session.pop("usuario_id", None)
+    flash("Sessão encerrada.", "ok")
+    return redirect(url_for("index"))
+
+
+@app.route("/recuperar", methods=["GET", "POST"])
+def recuperar():
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        codigo = request.form.get("codigo", "").strip().upper()
+        if codigo and len(codigo) == 6:
+            codigo = "REC-" + codigo
+        nova = request.form.get("senha", "")
+        if len(nova) < 6:
+            flash("A nova senha precisa de pelo menos 6 caracteres.", "erro")
+            return render_template("recuperar.html", email=email,
+                                   codigo=request.form.get("codigo", ""))
+        conn = get_db()
+        row = conn.execute("SELECT id FROM usuarios WHERE email=? AND codigo_recup=?",
+                           (email, codigo)).fetchone()
+        if row:
+            conn.execute("UPDATE usuarios SET senha_hash=? WHERE id=?",
+                         (generate_password_hash(nova), row["id"]))
+            conn.commit()
+            conn.close()
+            flash("Senha alterada! Entre com a nova senha.", "ok")
+            return redirect(url_for("entrar"))
+        conn.close()
+        flash("E-mail ou código de recuperação inválidos.", "erro")
+        return render_template("recuperar.html", email=email,
+                               codigo=request.form.get("codigo", ""))
+    return render_template("recuperar.html", email="", codigo="")
 
 
 # ------------------------------------------------------------------
@@ -454,7 +654,7 @@ def personal_painel():
     foco = request.args.get("foco", "") or ""
     lim = request.args.get("lim", "") or ""
     conn = get_db()
-    sql = ("SELECT id, nome, idade, focos, limitacoes, criado_em FROM planos"
+    sql = ("SELECT id, token, nome, idade, focos, limitacoes, criado_em FROM planos"
            " WHERE personal_id=?")
     params = [eu["id"]]
     if q:
@@ -469,7 +669,8 @@ def personal_painel():
     sql += " ORDER BY id DESC"
     meus = [dict(r) for r in conn.execute(sql, params).fetchall()]
 
-    sql2 = "SELECT id, nome, focos, criado_em FROM planos WHERE personal_id IS NULL"
+    sql2 = ("SELECT id, token, nome, focos, criado_em FROM planos"
+            " WHERE personal_id IS NULL AND usuario_id IS NULL")
     params2 = []
     if q:
         sql2 += " AND nome LIKE ?"
@@ -542,9 +743,15 @@ def personal_anotacoes(plano_id):
                        (texto, plano_id, eu["id"]))
     conn.commit()
     ok = cur.rowcount > 0
+    token = None
+    if ok:
+        token = conn.execute("SELECT token FROM planos WHERE id=?",
+                             (plano_id,)).fetchone()["token"]
     conn.close()
     flash("Anotações salvas." if ok else "Você não é o personal deste plano.", "ok" if ok else "erro")
-    return redirect(url_for("ver_plano", plano_id=plano_id))
+    if token:
+        return redirect(url_for("ver_plano", plano_token=token))
+    return redirect(url_for("personal_painel"))
 
 
 # ------------------------------------------------------------------
@@ -578,8 +785,8 @@ def admin_painel():
     conn = get_db()
     n_ex = conn.execute("SELECT COUNT(*) c FROM exercicios").fetchone()["c"]
     n_pl = conn.execute("SELECT COUNT(*) c FROM planos").fetchone()["c"]
-    planos = conn.execute("SELECT id, nome, criado_em FROM planos ORDER BY id DESC"
-                          " LIMIT 20").fetchall()
+    planos = conn.execute("SELECT id, token, nome, criado_em FROM planos"
+                          " ORDER BY id DESC LIMIT 20").fetchall()
     conn.close()
     return render_template("admin_painel.html", n_ex=n_ex, n_pl=n_pl, planos=planos)
 

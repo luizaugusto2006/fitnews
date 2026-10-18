@@ -28,7 +28,7 @@
       {% for p in planos %}
       <tr>
         <td>{{ p['id'] }}</td>
-        <td><a href="{{ url_for('ver_plano', plano_id=p['id']) }}">{{ p['nome'] }}</a></td>
+        <td><a href="{{ url_for('ver_plano', plano_token=p['token']) }}">{{ p['nome'] }}</a></td>
         <td>{{ p['criado_em'] }}</td>
         <td>
           <form method="post" action="{{ url_for('admin_plano_excluir', plano_id=p['id']) }}"

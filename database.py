@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Banco de dados SQLite do FitNews: esquema e seed."""
 import os
+import secrets
 import sqlite3
 import time
 import unicodedata
@@ -47,6 +48,8 @@ CREATE TABLE IF NOT EXISTS planos (
     observacoes TEXT NOT NULL DEFAULT '',
     personal_id INTEGER,
     anotacoes TEXT NOT NULL DEFAULT '',
+    usuario_id INTEGER,
+    token TEXT UNIQUE,
     dados_json TEXT NOT NULL DEFAULT '{}',
     criado_em TEXT NOT NULL DEFAULT (datetime('now', '-3 hours'))
 );
@@ -59,12 +62,22 @@ CREATE TABLE IF NOT EXISTS personais (
     codigo TEXT NOT NULL UNIQUE,
     criado_em TEXT NOT NULL DEFAULT (datetime('now', '-3 hours'))
 );
+
+CREATE TABLE IF NOT EXISTS usuarios (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT NOT NULL UNIQUE,
+    senha_hash TEXT NOT NULL,
+    codigo_recup TEXT NOT NULL UNIQUE,
+    criado_em TEXT NOT NULL DEFAULT (datetime('now', '-3 hours'))
+);
 """
 
 # Colunas adicionadas em bancos criados em versoes anteriores
 MIGRACOES_PLANOS = [
     ("personal_id", "ALTER TABLE planos ADD COLUMN personal_id INTEGER"),
     ("anotacoes", "ALTER TABLE planos ADD COLUMN anotacoes TEXT NOT NULL DEFAULT ''"),
+    ("usuario_id", "ALTER TABLE planos ADD COLUMN usuario_id INTEGER"),
+    ("token", "ALTER TABLE planos ADD COLUMN token TEXT"),
 ]
 
 
@@ -119,6 +132,19 @@ def init_db():
                 ('"%s"' % antigo, '"%s"' % novo),
             )
         conn.execute("PRAGMA user_version = 2")
+    # Privacidade: todo plano ganha um token secreto na URL e os planos
+    # antigos ficam sem dono ate que o criador os salve na conta.
+    if conn.execute("PRAGMA user_version").fetchone()[0] < 3:
+        pendentes = conn.execute(
+            "SELECT id FROM planos WHERE token IS NULL OR token = ''").fetchall()
+        for r in pendentes:
+            while True:
+                token = secrets.token_urlsafe(9)
+                if not conn.execute("SELECT 1 FROM planos WHERE token=?",
+                                    (token,)).fetchone():
+                    break
+            conn.execute("UPDATE planos SET token=? WHERE id=?", (token, r["id"]))
+        conn.execute("PRAGMA user_version = 3")
     total = conn.execute("SELECT COUNT(*) c FROM exercicios").fetchone()["c"]
     if total == 0:
         conn.executemany(

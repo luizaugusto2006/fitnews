@@ -110,7 +110,7 @@
 
   <div class="no-print">
     <button class="btn" type="button" onclick="window.print()">Imprimir / salvar PDF</button>
-    <a class="btn btn-fantasma" href="{{ url_for('ver_plano', plano_id=plano['id']) }}">← Voltar ao plano completo</a>
+    <a class="btn btn-fantasma" href="{{ url_for('ver_plano', plano_token=plano['token']) }}">← Voltar ao plano completo</a>
   </div>
 </main>
 </body>
