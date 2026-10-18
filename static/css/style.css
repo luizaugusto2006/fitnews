@@ -292,10 +292,20 @@ input[readonly] { color: var(--acento); font-weight: 700; }
 .busca-filtros input[type="search"] { flex: 1; min-width: 200px; }
 
 /* ---------- rodape ---------- */
-.rodape { border-top: 1px solid var(--borda); background: var(--fundo2); margin-top: 3rem; padding: 2rem 0; }
+.rodape { border-top: 1px solid var(--borda); background: var(--fundo2); margin-top: 3rem; padding: 2rem 0; position: relative; }
 .rodape p { color: var(--texto2); font-size: .9rem; }
 .disclaimer { font-size: .8rem !important; opacity: .8; }
 .cop { font-size: .8rem !important; opacity: .6; }
+.cop strong { color: var(--texto); }
+.ponto-admin {
+  position: absolute; right: 16px; bottom: 14px;
+  width: 11px; height: 11px; border-radius: 50%;
+  background: rgba(198,255,47,.4); transition: .15s;
+}
+.ponto-admin:hover {
+  background: var(--acento); transform: scale(1.35);
+  box-shadow: 0 0 10px rgba(198,255,47,.8); text-decoration: none;
+}
 
 /* ---------- imagens e ornamentos ---------- */
 .logo { display: flex; align-items: center; gap: .5rem; }

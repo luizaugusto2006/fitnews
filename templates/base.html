@@ -26,7 +26,6 @@
       <a href="{{ url_for('contato') }}">Contato</a>
       <a href="{{ url_for('privacidade') }}">Privacidade</a>
       <a href="{{ url_for('personal_painel') if session.get('personal_id') else url_for('personal') }}">Personal</a>
-      <a href="{{ url_for('admin_painel') if session.get('admin') else url_for('admin_login') }}">Admin</a>
     </nav>
   </div>
 </header>
@@ -49,8 +48,9 @@
   <div class="container">
     <p><strong>FITNEWS</strong> — Treino com segurança, resultado com constância.</p>
     <p class="disclaimer">Os planos, alimentações e suplementos sugeridos neste site são educativos e gerados automaticamente. Não substituem avaliação médica, nutricional ou acompanhamento de um educador físico. Em caso de dor, tontura ou desconforto, interrompa o exercício e procure um profissional de saúde. · <a href="{{ url_for('privacidade') }}">Política de Privacidade (LGPD)</a></p>
-    <p class="cop">© {{ date.today().year if date else '2026' }} FitNews · fitnews.pythonanywhere.com</p>
+    <p class="cop">Desenvolvido por <strong>Solinfos</strong> · <a href="tel:+5521970088404">(21) 97008-8404</a></p>
   </div>
+  <a class="ponto-admin" href="{{ url_for('admin_painel') if session.get('admin') else url_for('admin_login') }}" aria-label="Acesso administrativo" title="Admin"></a>
 </footer>
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 {% block scripts %}{% endblock %}
