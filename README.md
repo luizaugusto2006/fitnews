@@ -79,9 +79,9 @@ python test_site.py
 
 ## Acesso admin
 
-- URL: `/admin` — padrão `admin` / `fitnews2026`
-- Altere com as variáveis de ambiente `ADMIN_USER` e `ADMIN_PASSWORD`
-  (e defina uma `SECRET_KEY` forte em produção).
+- URL: `/admin` — usuário e senha definidos em `app.py` (`ADMIN_USER` e
+  `ADMIN_PASSWORD`), podendo ser sobrescritos pelas variáveis de ambiente de
+  mesmo nome (e defina uma `SECRET_KEY` forte em produção).
 
 ## Área do Personal
 

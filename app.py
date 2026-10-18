@@ -23,7 +23,7 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "fitnews-dev-key-troque-em-producao")
 
 ADMIN_USER = os.environ.get("ADMIN_USER", "admin")
-ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "fitnews2026")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "19160731")
 
 NIVEIS = [("iniciante", "Iniciante (nunca treinei ou até 6 meses)"),
           ("intermediario", "Intermediário (6 meses a 2 anos)"),
