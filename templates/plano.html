@@ -113,6 +113,12 @@
                 <button type="button" class="btn-trocar" title="Trocar por outro exercício do mesmo grupo (respeitando suas limitações)"
                         data-atual="{{ e['nome'] }}" data-grupo="{{ e['grupo'] }}">↻ trocar</button>
                 <br><small>{{ e['grupo_label'] }} · {{ e.get('equipamento_label') or e['equipamento'].replace('_',' ') }}</small>
+                {% if e.get('execucao') %}
+                <details class="como-fazer">
+                  <summary>Como fazer</summary>
+                  <p>{{ e['execucao'] }}</p>
+                </details>
+                {% endif %}
               </td>
               <td data-l="Séries">{{ e['series'] }}</td>
               <td data-l="Reps">{{ e['reps'] }}</td>

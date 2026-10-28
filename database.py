@@ -24,7 +24,8 @@ CREATE TABLE IF NOT EXISTS exercicios (
     grupo TEXT NOT NULL,
     equipamento TEXT NOT NULL,
     nivel TEXT NOT NULL,
-    contraindicado_para TEXT NOT NULL DEFAULT ''
+    contraindicado_para TEXT NOT NULL DEFAULT '',
+    execucao TEXT NOT NULL DEFAULT ''
 );
 
 CREATE TABLE IF NOT EXISTS planos (
@@ -87,6 +88,10 @@ MIGRACOES_USUARIOS = [
     ("reset_expira", "ALTER TABLE usuarios ADD COLUMN reset_expira TEXT"),
 ]
 
+MIGRACOES_EXERCICIOS = [
+    ("execucao", "ALTER TABLE exercicios ADD COLUMN execucao TEXT NOT NULL DEFAULT ''"),
+]
+
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)
@@ -105,6 +110,10 @@ def init_db():
     for coluna, ddl in MIGRACOES_USUARIOS:
         if coluna not in colunas_u:
             conn.execute(ddl)
+    colunas_e = {r[1] for r in conn.execute("PRAGMA table_info(exercicios)")}
+    for coluna, ddl in MIGRACOES_EXERCICIOS:
+        if coluna not in colunas_e:
+            conn.execute(ddl)
     # Correcao unica: bancos criados antes desta versao gravavam UTC no servidor
     # (PythonAnywhere). Se a maquina esta em UTC, desloca os horarios ja gravados
     # para o horario de Brasilia (UTC-3). user_version garante que roda uma vez.
@@ -119,7 +128,7 @@ def init_db():
     # ja salvos (dados_json). user_version = 2 garante que roda uma vez.
     if conn.execute("PRAGMA user_version").fetchone()[0] < 2:
         pares = {}
-        for nome, _g, _e, _n, _c in EXERCISES:
+        for nome, _g, _e, _n, _c, _x in EXERCISES:
             antigo = _sem_acento(nome)
             if antigo != nome:
                 pares[antigo] = nome
@@ -159,9 +168,18 @@ def init_db():
     total = conn.execute("SELECT COUNT(*) c FROM exercicios").fetchone()["c"]
     if total == 0:
         conn.executemany(
-            "INSERT INTO exercicios (nome, grupo, equipamento, nivel, contraindicado_para)"
-            " VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO exercicios (nome, grupo, equipamento, nivel,"
+            " contraindicado_para, execucao) VALUES (?, ?, ?, ?, ?, ?)",
             EXERCISES,
         )
+    else:
+        # Preenche a execucao de exercicios antigos (so quando vazia,
+        # preservando ajustes feitos pelo admin)
+        for nome, _g, _e, _n, _c, execucao in EXERCISES:
+            if execucao:
+                conn.execute(
+                    "UPDATE exercicios SET execucao=? WHERE nome=?"
+                    " AND (execucao IS NULL OR execucao='')",
+                    (execucao, nome))
     conn.commit()
     conn.close()

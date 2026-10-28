@@ -288,6 +288,18 @@ def _carregar_plano(plano_token):
     plano["focos_lista"] = [x for x in (plano["focos"] or "").split(",") if x]
     plano["nivel_treino_label"] = NIVEL_LABELS.get(plano["nivel_treino"],
                                                    plano["nivel_treino"])
+    # Completa a "execucao" dos exercicios (planos antigos nao tinham o campo)
+    faltando = {ex["nome"] for dia in plano["dados"].get("dias", [])
+                for ex in dia.get("exercicios", []) if not ex.get("execucao")}
+    if faltando:
+        conn = get_db()
+        base = {r["nome"]: r["execucao"] for r in
+                conn.execute("SELECT nome, execucao FROM exercicios")}
+        conn.close()
+        for dia in plano["dados"].get("dias", []):
+            for ex in dia.get("exercicios", []):
+                if not ex.get("execucao") and ex["nome"] in base:
+                    ex["execucao"] = base[ex["nome"]]
     return plano
 
 
@@ -394,7 +406,12 @@ def plano_trocar(plano_token):
         return redirect(url_for("ver_plano", plano_token=plano_token))
     alvo["nome"] = escolhido["nome"]
     alvo["equipamento"] = escolhido["equipamento"]
+    alvo["equipamento_label"] = EQUIP_LABELS.get(
+        escolhido["equipamento"],
+        escolhido["equipamento"].replace("_", " "))
     alvo["nivel"] = escolhido["nivel"]
+    alvo["nivel_label"] = NIVEL_LABELS.get(escolhido["nivel"], escolhido["nivel"])
+    alvo["execucao"] = escolhido.get("execucao") or ""
     alvo.pop("carga", None)
     _salvar_dados(plano["id"], dados)
     flash(f"Exercício trocado por: {novo}.", "ok")
@@ -974,14 +991,14 @@ def admin_exportar_exercicios():
         return redirect(url_for("admin_login"))
     conn = get_db()
     rows = conn.execute(
-        "SELECT id, nome, grupo, equipamento, nivel, contraindicado_para"
-        " FROM exercicios ORDER BY grupo, nome").fetchall()
+        "SELECT id, nome, grupo, equipamento, nivel, contraindicado_para,"
+        " execucao FROM exercicios ORDER BY grupo, nome").fetchall()
     conn.close()
     linhas = [[r["id"], r["nome"], r["grupo"], r["equipamento"], r["nivel"],
-               r["contraindicado_para"]] for r in rows]
+               r["contraindicado_para"], r["execucao"]] for r in rows]
     return _csv_response("fitnews_exercicios.csv",
                          ["id", "nome", "grupo", "equipamento", "nivel",
-                          "contraindicado_para"], linhas)
+                          "contraindicado_para", "execucao"], linhas)
 
 
 @app.route("/admin/exercicios")
@@ -1011,6 +1028,7 @@ def admin_exercicio_salvar():
     equip = f.get("equipamento", "").strip()
     nivel = f.get("nivel", "iniciante")
     contra = ",".join(x.strip() for x in f.getlist("contraindicado_para") if x.strip())
+    execucao = f.get("execucao", "").strip()
     if not nome or not grupo:
         flash("Nome e grupo são obrigatórios.", "erro")
         return redirect(url_for("admin_exercicios"))
@@ -1019,12 +1037,12 @@ def admin_exercicio_salvar():
     try:
         if ex_id:
             conn.execute("UPDATE exercicios SET nome=?, grupo=?, equipamento=?, nivel=?,"
-                         " contraindicado_para=? WHERE id=?",
-                         (nome, grupo, equip, nivel, contra, int(ex_id)))
+                         " contraindicado_para=?, execucao=? WHERE id=?",
+                         (nome, grupo, equip, nivel, contra, execucao, int(ex_id)))
         else:
             conn.execute("INSERT INTO exercicios (nome, grupo, equipamento, nivel,"
-                         " contraindicado_para) VALUES (?,?,?,?,?)",
-                         (nome, grupo, equip, nivel, contra))
+                         " contraindicado_para, execucao) VALUES (?,?,?,?,?,?)",
+                         (nome, grupo, equip, nivel, contra, execucao))
         conn.commit()
         flash("Exercício salvo.", "ok")
     except Exception:

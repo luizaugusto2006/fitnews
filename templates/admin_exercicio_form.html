@@ -36,6 +36,9 @@
         {% endfor %}
       </div>
     </div>
+    <label class="campo"><span>Como fazer (execução mostrada no plano)</span>
+      <textarea name="execucao" rows="4"
+        placeholder="Explique em 2-3 frases: posição inicial, movimento, respiração e erros comuns.">{{ ex['execucao'] if ex and ex['execucao'] else '' }}</textarea></label>
     <div class="acoes">
       <button class="btn" type="submit">Salvar</button>
       <a class="btn btn-fantasma" href="{{ url_for('admin_exercicios') }}">Voltar</a>

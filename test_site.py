@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Smoke test do FitNews (executar: python test_site.py)"""
+import json
 import re
 
 import app as app_mod
@@ -90,10 +91,53 @@ print("  lista exercicios:", r7.status_code == 200)
 r8 = c.post("/admin/exercicios/salvar", data={
     "nome": "Teste Exercicio", "grupo": "peito", "equipamento": "halteres",
     "nivel": "iniciante", "contraindicado_para": "ombro",
+    "execucao": "Execucao de teste.",
 }, follow_redirects=True)
 print("  criar exercicio:", "Teste Exercicio" in r8.get_data(as_text=True))
 r9 = c.get("/admin/exercicios/1/editar")
 print("  editar exercicio:", r9.status_code == 200)
+
+print("== Execucao dos exercicios ==")
+r = c.get(f"/plano/{tok1}")
+hp = r.get_data(as_text=True)
+qtd = hp.count('class="como-fazer"')
+print("  bloco Como fazer no plano:", qtd > 0)
+assert qtd > 0 and "Como fazer" in hp
+conn = database.get_db()
+vazios = conn.execute("SELECT COUNT(*) c FROM exercicios"
+                      " WHERE execucao IS NULL OR execucao=''").fetchone()["c"]
+conn.close()
+print("  todos os exercicios com execucao:", vazios == 0)
+assert vazios == 0
+# plano antigo (sem o campo no JSON) ganha a execucao ao ser visualizado
+conn = database.get_db()
+pl = conn.execute("SELECT id, dados_json FROM planos WHERE token=?",
+                  (tok1,)).fetchone()
+dj = json.loads(pl["dados_json"])
+for dia in dj["dias"]:
+    for ex in dia["exercicios"]:
+        ex.pop("execucao", None)
+conn.execute("UPDATE planos SET dados_json=? WHERE id=?",
+             (json.dumps(dj, ensure_ascii=False), pl["id"]))
+conn.commit()
+ex_nome = dj["dias"][0]["exercicios"][0]["nome"]
+row = conn.execute("SELECT id, grupo, equipamento, nivel FROM exercicios WHERE nome=?",
+                   (ex_nome,)).fetchone()
+conn.close()
+r = c.get(f"/plano/{tok1}")
+print("  plano antigo sem campo ganha execucao na hora:",
+      'class="como-fazer"' in r.get_data(as_text=True))
+assert 'class="como-fazer"' in r.get_data(as_text=True)
+# edicao pelo admin aparece no plano sem precisar regerar
+r = c.post("/admin/exercicios/salvar", data={
+    "id": row["id"], "nome": ex_nome, "grupo": row["grupo"],
+    "equipamento": row["equipamento"], "nivel": row["nivel"],
+    "execucao": "EXECUCAO-EDITADA teste 123.",
+}, follow_redirects=True)
+r = c.get(f"/plano/{tok1}")
+ok_exec = "EXECUCAO-EDITADA teste 123." in r.get_data(as_text=True)
+print("  edicao do admin aparece no plano:", ok_exec)
+assert ok_exec
 
 print("== Personal trainer ==")
 r = c.get("/personal")

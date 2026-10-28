@@ -380,6 +380,7 @@ def gerar_plano(dados, anterior=None):
                     "equipamento_label": EQUIP_LABELS.get(e["equipamento"], e["equipamento"].replace("_", " ")),
                     "nivel": e["nivel"],
                     "nivel_label": NIVEL_LABELS.get(e["nivel"], e["nivel"]),
+                    "execucao": e.get("execucao") or "",
                     "series": eq["series"], "reps": eq["reps"], "descanso": eq["descanso"],
                 })
         # sorteado no maximo para nao repetir sempre a mesma ordem visual

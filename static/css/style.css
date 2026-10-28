@@ -173,6 +173,27 @@ input[readonly] { color: var(--acento); font-weight: 700; }
 .dia-topo { background: linear-gradient(120deg, rgba(198,255,47,.16), transparent); padding: 1rem 1.2rem .6rem; }
 .dia-topo h2 { color: var(--acento); margin: 0; }
 .dia-topo p { color: var(--texto2); font-size: .85rem; margin: 0; }
+.como-fazer { margin-top: .35rem; }
+.como-fazer summary {
+  cursor: pointer;
+  font-size: .8rem;
+  color: var(--texto2);
+  font-weight: 600;
+  list-style: none;
+}
+.como-fazer summary::before { content: "▸ "; }
+.como-fazer[open] summary::before { content: "▾ "; }
+.como-fazer p {
+  margin: .3rem 0 .2rem;
+  font-size: .85rem;
+  line-height: 1.45;
+  color: var(--texto2);
+  background: rgba(0, 0, 0, .04);
+  border-left: 3px solid var(--acento);
+  padding: .5rem .7rem;
+  border-radius: 0 .5rem .5rem 0;
+}
+
 .dica-dia { font-size: .82rem; color: var(--texto2); padding: .6rem 1.2rem 1rem; margin: 0; }
 
 .tabela-ex { width: 100%; border-collapse: collapse; font-size: .92rem; }
