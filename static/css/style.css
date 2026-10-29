@@ -176,10 +176,11 @@ input[readonly] { color: var(--acento); font-weight: 700; }
 .como-fazer { margin-top: .35rem; }
 .como-fazer summary {
   cursor: pointer;
-  font-size: .8rem;
-  color: var(--texto2);
-  font-weight: 600;
+  font-size: .84rem;
+  color: var(--acento);
+  font-weight: 800;
   list-style: none;
+  display: inline-block;
 }
 .como-fazer summary::before { content: "▸ "; }
 .como-fazer[open] summary::before { content: "▾ "; }
