@@ -398,16 +398,18 @@ r = c.post("/recuperar", data={"email": "dono@fitnews.com", "acao": "enviar_link
 hp = r.get_data(as_text=True)
 print("  link enviado ao e-mail certo:", bool(enviados) and enviados[0][0] == "dono@fitnews.com")
 assert enviados and enviados[0][0] == "dono@fitnews.com"
-print("  aviso generico nao revela conta:", "Se existir" in hp)
-assert "Se existir" in hp
+print("  link enviado avisa o usuario:", "Link enviado" in hp)
+assert "Link enviado" in hp
 m = re.search(r"/redefinir/([A-Za-z0-9_\-]+)", enviados[0][1])
 assert m, "link de redefinicao ausente no e-mail"
 tok_r = m.group(1)
 enviados.clear()
 r = c.post("/recuperar", data={"email": "naoexiste@fitnews.com", "acao": "enviar_link"},
            follow_redirects=True)
-print("  e-mail inexistente nao gera envio:", not enviados)
-assert not enviados and "Se existir" in r.get_data(as_text=True)
+hp = r.get_data(as_text=True)
+print("  e-mail nao cadastrado avisa na hora:",
+      not enviados and "Não encontramos nenhuma conta" in hp)
+assert not enviados and "Não encontramos nenhuma conta" in hp
 # link valido -> nova senha
 r = c.post(f"/redefinir/{tok_r}", data={"senha": "emailnovo1", "senha2": "emailnovo1"},
            follow_redirects=True)

@@ -17,6 +17,8 @@
       <input type="email" name="email" required value="{{ email or '' }}" autocomplete="email"></label>
     <button class="btn btn-grande" type="submit">Enviar link por e-mail</button>
   </form>
+  <p class="campo-ajuda">Ainda não tem conta?
+    <a href="{{ url_for('conta') }}">Crie a sua aqui</a>.</p>
 
   <div class="aviso" style="margin-top:1.5rem">
     <strong>2. Já tenho o código de recuperação</strong><br>

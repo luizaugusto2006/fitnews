@@ -646,11 +646,13 @@ def recuperar():
                           "instantes ou use o código de recuperação.", "erro")
                     return render_template("recuperar.html", email=email, codigo="")
                 conn.close()
+                flash("Link enviado! Confira a caixa de entrada e o spam do e-mail "
+                      "informado. Ele vale por 30 minutos.", "ok")
             else:
                 app.logger.warning("Recuperacao: nenhuma conta cadastrada com o"
                                    " e-mail %s", email)
-            flash("Se existir uma conta com este e-mail, enviamos um link para "
-                  "redefinir a senha. Confira a caixa de entrada e o spam.", "ok")
+                flash("Não encontramos nenhuma conta com este e-mail. Confira se "
+                      "digitou certo ou crie uma conta.", "erro")
             return render_template("recuperar.html", email=email, codigo="")
         # ---- opcao 2: codigo REC mostrado no cadastro ----
         bruto = request.form.get("codigo", "")
