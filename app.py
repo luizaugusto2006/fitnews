@@ -637,6 +637,8 @@ def recuperar():
                         f"{link}\n\n"
                         "Se nao foi voce, basta ignorar este email.\n"
                         "Se o link nao abrir, copie e cole o endereco no navegador.\n")
+                    app.logger.warning("Recuperacao: e-mail de redefinicao enviado"
+                                       " para %s", email)
                 except Exception:
                     app.logger.exception("Falha ao enviar email de recuperacao")
                     conn.close()
@@ -644,6 +646,9 @@ def recuperar():
                           "instantes ou use o código de recuperação.", "erro")
                     return render_template("recuperar.html", email=email, codigo="")
                 conn.close()
+            else:
+                app.logger.warning("Recuperacao: nenhuma conta cadastrada com o"
+                                   " e-mail %s", email)
             flash("Se existir uma conta com este e-mail, enviamos um link para "
                   "redefinir a senha. Confira a caixa de entrada e o spam.", "ok")
             return render_template("recuperar.html", email=email, codigo="")
