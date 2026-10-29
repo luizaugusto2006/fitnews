@@ -242,12 +242,50 @@ def criar():
                 erros.append("Código do personal não encontrado. Confira o código ou deixe em branco.")
         if not erros and session.get("personal_novo"):
             personal_id = session["personal_novo"]
+        # conta opcional: senha digitada junto com o plano cria/entra na conta
+        senha1 = request.form.get("conta_senha", "")
+        senha2 = request.form.get("conta_senha2", "")
+        if senha1 or senha2:
+            email_conta = (dados.get("email") or "").strip().lower()
+            if "@" not in email_conta or len(email_conta) < 5:
+                erros.append("Para criar a conta, informe um e-mail válido no campo "
+                             "E-mail do início do formulário.")
+            elif len(senha1) < 6:
+                erros.append("A senha da conta precisa de pelo menos 6 caracteres.")
+            elif senha1 != senha2:
+                erros.append("As senhas da conta não conferem.")
         if erros:
             for e in erros:
                 flash(e, "erro")
             return render_template("criar.html", dados=dados, focos=FOCOS,
                                    limitacoes=LIMITACOES, niveis=NIVEIS,
                                    atividades=ATIVIDADES, horarios=HORARIOS)
+        if senha1:
+            email_conta = (dados.get("email") or "").strip().lower()
+            conn = get_db()
+            row = conn.execute("SELECT * FROM usuarios WHERE email=?",
+                               (email_conta,)).fetchone()
+            if row and check_password_hash(row["senha_hash"], senha1):
+                session["usuario_id"] = row["id"]
+            elif row:
+                flash("Este e-mail já tem uma conta e a senha não bate. O plano será "
+                      "criado, mas não ficará salvo nessa conta — entre ou recupere a "
+                      "senha pelo menu Entrar.", "erro")
+            else:
+                codigo = _gerar_codigo_recuperacao()
+                try:
+                    cur = conn.execute(
+                        "INSERT INTO usuarios (email, senha_hash, codigo_recup)"
+                        " VALUES (?,?,?)",
+                        (email_conta, generate_password_hash(senha1), codigo))
+                    conn.commit()
+                    session["usuario_id"] = cur.lastrowid
+                    flash("Conta criada! Guarde o código de recuperação (aparece só "
+                          f"nesta vez): {codigo}", "ok")
+                except sqlite3.IntegrityError:
+                    flash("Já existe uma conta com este e-mail. Use a senha dela ou "
+                          "recupere a senha pelo menu Entrar.", "erro")
+            conn.close()
         plano_json = gerar_plano(dados)
         token = _gerar_token_plano()
         conn = get_db()

@@ -124,6 +124,24 @@
       </div>
     </fieldset>
 
+    <fieldset>
+      <legend>6. Sua conta (opcional)</legend>
+      <p class="campo-ajuda">Quer encontrar este plano depois, em qualquer dispositivo?
+        Digite uma senha e a conta é criada agora mesmo, usando o e-mail informado no
+        topo do formulário — o plano já nasce salvo nela. Deixe em branco se preferir
+        só gerar o plano.</p>
+      <div class="grade grade-2">
+        <label class="campo">
+          <span>Senha da conta (mínimo 6 caracteres)</span>
+          <input type="password" name="conta_senha" minlength="6" autocomplete="new-password">
+        </label>
+        <label class="campo">
+          <span>Repetir a senha da conta</span>
+          <input type="password" name="conta_senha2" minlength="6" autocomplete="new-password">
+        </label>
+      </div>
+    </fieldset>
+
     <label class="aceite">
       <input type="checkbox" name="aceite" value="sim" {{ 'checked' if dados.get('aceite')=='sim' else '' }}>
       <span>Entendo que este plano é educativo e <strong>não substitui avaliação médica ou acompanhamento profissional</strong>. Em caso de dor ou desconforto, vou interromper o exercício e procurar um profissional de saúde.</span>

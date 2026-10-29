@@ -463,5 +463,81 @@ print("  salva como ISO:", lin["data_nascimento"] == "1985-07-15",
 assert lin["data_nascimento"] == "1985-07-15"
 assert lin["idade"] and 10 <= lin["idade"] <= 100
 
+print("== Conta criada junto com o plano ==")
+base_form = {
+    "sexo": "outro", "data_nascimento": "15/07/1990", "peso": "70", "altura": "175",
+    "atividade": "moderado", "nivel_treino": "iniciante", "dias": "3",
+    "local": "academia", "focos": ["core"], "aceite": "sim",
+    "aceite_privacidade": "sim",
+}
+r = c.post("/criar", data=dict(base_form, nome="Conta Junta",
+                               email="junta-conta@fitnews.com",
+                               conta_senha="senha123", conta_senha2="senha123"),
+           follow_redirects=True)
+hp = r.get_data(as_text=True)
+print("  aviso de conta criada:", "Conta criada!" in hp)
+assert "Conta criada!" in hp
+conn = database.get_db()
+u = conn.execute("SELECT id FROM usuarios WHERE email='junta-conta@fitnews.com'"
+                 ).fetchone()
+pl = conn.execute("SELECT usuario_id FROM planos WHERE nome='Conta Junta'").fetchone()
+conn.close()
+print("  conta gravada + plano ja ligado a ela:", u is not None and pl
+      and pl["usuario_id"] == u["id"])
+assert u and pl and pl["usuario_id"] == u["id"]
+r = c.get("/planos")
+print("  Meus Planos ja mostra o plano (logado):", "Conta Junta" in r.get_data(as_text=True))
+assert "Conta Junta" in r.get_data(as_text=True)
+
+c.get("/sair")
+# senha da conta curta -> erro e NENHUM plano criado
+r = c.post("/criar", data=dict(base_form, nome="Conta Senha Fraca",
+                               email="fraca@fitnews.com",
+                               conta_senha="123", conta_senha2="123"),
+           follow_redirects=True)
+print("  senha curta recusada:", "pelo menos 6 caracteres" in r.get_data(as_text=True))
+assert "pelo menos 6 caracteres" in r.get_data(as_text=True)
+# senhas diferentes -> erro e NENHUM plano criado
+r = c.post("/criar", data=dict(base_form, nome="Conta Senha Diferente",
+                               email="diferente@fitnews.com",
+                               conta_senha="senhauuum", conta_senha2="senhauuun"),
+           follow_redirects=True)
+print("  senhas diferentes recusadas:", "não conferem" in r.get_data(as_text=True))
+assert "não conferem" in r.get_data(as_text=True)
+conn = database.get_db()
+nao_planos = conn.execute("SELECT COUNT(*) c FROM planos WHERE nome IN"
+                          " ('Conta Senha Fraca','Conta Senha Diferente')"
+                          ).fetchone()["c"]
+conn.close()
+print("  erros de senha nao geram plano:", nao_planos == 0)
+assert nao_planos == 0
+# e-mail que ja tem conta + senha errada -> plano criado, mas sem salvar
+r = c.post("/criar", data=dict(base_form, nome="Plano Nao Salvo",
+                               email="dono@fitnews.com",
+                               conta_senha="senhaerrada9", conta_senha2="senhaerrada9"),
+           follow_redirects=True)
+print("  senha de conta existente errada avisa:", "senha não bate" in r.get_data(as_text=True))
+assert "senha não bate" in r.get_data(as_text=True)
+conn = database.get_db()
+pl2 = conn.execute("SELECT usuario_id FROM planos WHERE nome='Plano Nao Salvo'"
+                   ).fetchone()
+conn.close()
+print("  plano ficou sem dono:", pl2 is not None and pl2["usuario_id"] is None)
+assert pl2 is not None and pl2["usuario_id"] is None
+# e-mail que ja tem conta + senha certa -> loga e o plano nasce salvo
+r = c.post("/criar", data=dict(base_form, nome="Plano Salvo Existente",
+                               email="junta-conta@fitnews.com",
+                               conta_senha="senha123", conta_senha2="senha123"),
+           follow_redirects=True)
+conn = database.get_db()
+pl3 = conn.execute("SELECT usuario_id FROM planos WHERE nome='Plano Salvo Existente'"
+                   ).fetchone()
+conn.close()
+print("  senha certa de conta existente loga e salva:",
+      pl3 is not None and pl3["usuario_id"] == u["id"])
+assert pl3 is not None and pl3["usuario_id"] == u["id"]
+r = c.get("/planos")
+assert "Plano Salvo Existente" in r.get_data(as_text=True)
+
 print()
 print("TODOS OS TESTES PASSARAM" if falhas == 0 else "HOUVE FALHAS")
