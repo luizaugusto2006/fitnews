@@ -561,11 +561,15 @@ def conta():
                 (email, generate_password_hash(senha), codigo))
             conn.commit()
             session["usuario_id"] = cur.lastrowid
+            app.logger.warning("Conta criada: %s (id=%s)", email, cur.lastrowid)
         except sqlite3.IntegrityError:
             conn.close()
+            app.logger.warning("Tentativa de cadastro com e-mail ja existente: %s",
+                               email)
             flash("Já existe uma conta com este e-mail.", "erro")
             return render_template("conta.html", email=email, plano=plano, prox=prox)
         except Exception:
+            app.logger.exception("Falha ao criar conta (%s)", email)
             conn.close()
             flash("Erro ao criar conta. Tente novamente.", "erro")
             return render_template("conta.html", email=email, plano=plano, prox=prox)
@@ -600,6 +604,7 @@ def entrar():
             _anexar_plano(plano)
             flash("Bem-vindo(a) de volta!", "ok")
             return redirect(_prox_seguro(prox))
+        app.logger.warning("Login recusado (conta ou senha) para: %s", email)
         flash("E-mail ou senha inválidos.", "erro")
         return render_template("entrar.html", email=email, plano=plano, prox=prox)
     return render_template("entrar.html", plano=plano, prox=prox, email="")
