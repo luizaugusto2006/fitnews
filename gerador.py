@@ -381,6 +381,8 @@ def gerar_plano(dados, anterior=None):
                     "nivel": e["nivel"],
                     "nivel_label": NIVEL_LABELS.get(e["nivel"], e["nivel"]),
                     "execucao": e.get("execucao") or "",
+                    "video_url": e.get("video_url") or "",
+                    "imagem_url": e.get("imagem_url") or "",
                     "series": eq["series"], "reps": eq["reps"], "descanso": eq["descanso"],
                 })
         # sorteado no maximo para nao repetir sempre a mesma ordem visual

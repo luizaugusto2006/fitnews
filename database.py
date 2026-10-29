@@ -25,7 +25,9 @@ CREATE TABLE IF NOT EXISTS exercicios (
     equipamento TEXT NOT NULL,
     nivel TEXT NOT NULL,
     contraindicado_para TEXT NOT NULL DEFAULT '',
-    execucao TEXT NOT NULL DEFAULT ''
+    execucao TEXT NOT NULL DEFAULT '',
+    video_url TEXT NOT NULL DEFAULT '',
+    imagem_url TEXT NOT NULL DEFAULT ''
 );
 
 CREATE TABLE IF NOT EXISTS planos (
@@ -90,6 +92,8 @@ MIGRACOES_USUARIOS = [
 
 MIGRACOES_EXERCICIOS = [
     ("execucao", "ALTER TABLE exercicios ADD COLUMN execucao TEXT NOT NULL DEFAULT ''"),
+    ("video_url", "ALTER TABLE exercicios ADD COLUMN video_url TEXT NOT NULL DEFAULT ''"),
+    ("imagem_url", "ALTER TABLE exercicios ADD COLUMN imagem_url TEXT NOT NULL DEFAULT ''"),
 ]
 
 

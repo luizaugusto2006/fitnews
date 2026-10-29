@@ -113,12 +113,29 @@
                 <button type="button" class="btn-trocar" title="Trocar por outro exercício do mesmo grupo (respeitando suas limitações)"
                         data-atual="{{ e['nome'] }}" data-grupo="{{ e['grupo'] }}">↻ trocar</button>
                 <br><small>{{ e['grupo_label'] }} · {{ e.get('equipamento_label') or e['equipamento'].replace('_',' ') }}</small>
-                {% if e.get('execucao') %}
+                {% set vid = youtube_id(e.get('video_url', '')) %}
                 <details class="como-fazer">
                   <summary>Como fazer este exercício</summary>
+                  {% if e.get('imagem_url') %}
+                  <img class="ex-imagem" src="{{ e['imagem_url'] }}"
+                       alt="{{ e['nome'] }}" loading="lazy">
+                  {% endif %}
+                  {% if e.get('execucao') %}
                   <p>{{ e['execucao'] }}</p>
+                  {% endif %}
+                  {% if vid %}
+                  <div class="video-box"><iframe src="https://www.youtube.com/embed/{{ vid }}"
+                      title="Como fazer: {{ e['nome'] }}" loading="lazy"
+                      allow="accelerometer; encrypted-media; picture-in-picture"
+                      allowfullscreen></iframe></div>
+                  {% elif e.get('video_url') %}
+                  <a class="yt-busca" href="{{ e['video_url'] }}" target="_blank"
+                     rel="noopener">▶ Assistir ao vídeo</a>
+                  {% else %}
+                  <a class="yt-busca" href="{{ busca_youtube(e['nome']) }}" target="_blank"
+                     rel="noopener">▶ Ver vídeos no YouTube</a>
+                  {% endif %}
                 </details>
-                {% endif %}
               </td>
               <td data-l="Séries">{{ e['series'] }}</td>
               <td data-l="Reps">{{ e['reps'] }}</td>

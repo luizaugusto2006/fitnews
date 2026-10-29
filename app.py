@@ -4,6 +4,7 @@ import csv
 import io
 import json
 import os
+import re
 import secrets
 import smtplib
 import string
@@ -11,6 +12,7 @@ import sqlite3
 import time
 from datetime import date, datetime
 from email.message import EmailMessage
+from urllib.parse import quote
 
 from flask import (Flask, Response, abort, flash, jsonify, redirect,
                    render_template, request, session, url_for)
@@ -65,6 +67,21 @@ def data_brasil(valor):
         return date.fromisoformat((valor or "").strip()[:10]).strftime("%d/%m/%Y")
     except ValueError:
         return valor or ""
+
+
+@app.template_global()
+def youtube_id(url):
+    """ID do video quando a URL e do YouTube (watch, youtu.be, shorts, embed)."""
+    m = re.search(r"(?:youtube\.com/(?:watch\?(?:[^#]*&)?v=|shorts/|embed/|live/)"
+                  r"|youtu\.be/)([\w-]{6,})", (url or "").strip())
+    return m.group(1) if m else None
+
+
+@app.template_global()
+def busca_youtube(nome):
+    """Link de busca no YouTube pelo nome do exercicio (fallback sem video)."""
+    return ("https://www.youtube.com/results?search_query="
+            + quote(f"{nome} exercicio"))
 
 
 def _multi_vals(form, campo):
@@ -326,18 +343,19 @@ def _carregar_plano(plano_token):
     plano["focos_lista"] = [x for x in (plano["focos"] or "").split(",") if x]
     plano["nivel_treino_label"] = NIVEL_LABELS.get(plano["nivel_treino"],
                                                    plano["nivel_treino"])
-    # Completa a "execucao" dos exercicios (planos antigos nao tinham o campo)
-    faltando = {ex["nome"] for dia in plano["dados"].get("dias", [])
-                for ex in dia.get("exercicios", []) if not ex.get("execucao")}
-    if faltando:
-        conn = get_db()
-        base = {r["nome"]: r["execucao"] for r in
-                conn.execute("SELECT nome, execucao FROM exercicios")}
-        conn.close()
-        for dia in plano["dados"].get("dias", []):
-            for ex in dia.get("exercicios", []):
-                if not ex.get("execucao") and ex["nome"] in base:
-                    ex["execucao"] = base[ex["nome"]]
+    # Sincroniza execucao/video/imagem com a base atual: edicoes do admin
+    # aparecem na hora, inclusive em planos antigos (sem esses campos)
+    conn = get_db()
+    base = {r["nome"]: r for r in conn.execute(
+        "SELECT nome, execucao, video_url, imagem_url FROM exercicios")}
+    conn.close()
+    for dia in plano["dados"].get("dias", []):
+        for ex in dia.get("exercicios", []):
+            atual = base.get(ex["nome"])
+            if atual:
+                ex["execucao"] = atual["execucao"] or ""
+                ex["video_url"] = atual["video_url"] or ""
+                ex["imagem_url"] = atual["imagem_url"] or ""
     return plano
 
 
@@ -1042,13 +1060,16 @@ def admin_exportar_exercicios():
     conn = get_db()
     rows = conn.execute(
         "SELECT id, nome, grupo, equipamento, nivel, contraindicado_para,"
-        " execucao FROM exercicios ORDER BY grupo, nome").fetchall()
+        " execucao, video_url, imagem_url FROM exercicios ORDER BY grupo, nome"
+    ).fetchall()
     conn.close()
     linhas = [[r["id"], r["nome"], r["grupo"], r["equipamento"], r["nivel"],
-               r["contraindicado_para"], r["execucao"]] for r in rows]
+               r["contraindicado_para"], r["execucao"], r["video_url"],
+               r["imagem_url"]] for r in rows]
     return _csv_response("fitnews_exercicios.csv",
                          ["id", "nome", "grupo", "equipamento", "nivel",
-                          "contraindicado_para", "execucao"], linhas)
+                          "contraindicado_para", "execucao", "video_url",
+                          "imagem_url"], linhas)
 
 
 @app.route("/admin/exercicios")
@@ -1079,20 +1100,30 @@ def admin_exercicio_salvar():
     nivel = f.get("nivel", "iniciante")
     contra = ",".join(x.strip() for x in f.getlist("contraindicado_para") if x.strip())
     execucao = f.get("execucao", "").strip()
+    video_url = f.get("video_url", "").strip()
+    imagem_url = f.get("imagem_url", "").strip()
     if not nome or not grupo:
         flash("Nome e grupo são obrigatórios.", "erro")
+        return redirect(url_for("admin_exercicios"))
+    if ((video_url and not video_url.startswith(("http://", "https://")))
+            or (imagem_url and not imagem_url.startswith(("http://", "https://")))):
+        flash("URL de vídeo e de imagem devem começar com http:// ou https://.", "erro")
         return redirect(url_for("admin_exercicios"))
     conn = get_db()
     ex_id = f.get("id", "")
     try:
         if ex_id:
             conn.execute("UPDATE exercicios SET nome=?, grupo=?, equipamento=?, nivel=?,"
-                         " contraindicado_para=?, execucao=? WHERE id=?",
-                         (nome, grupo, equip, nivel, contra, execucao, int(ex_id)))
+                         " contraindicado_para=?, execucao=?, video_url=?, imagem_url=?"
+                         " WHERE id=?",
+                         (nome, grupo, equip, nivel, contra, execucao, video_url,
+                          imagem_url, int(ex_id)))
         else:
             conn.execute("INSERT INTO exercicios (nome, grupo, equipamento, nivel,"
-                         " contraindicado_para, execucao) VALUES (?,?,?,?,?,?)",
-                         (nome, grupo, equip, nivel, contra, execucao))
+                         " contraindicado_para, execucao, video_url, imagem_url)"
+                         " VALUES (?,?,?,?,?,?,?,?)",
+                         (nome, grupo, equip, nivel, contra, execucao, video_url,
+                          imagem_url))
         conn.commit()
         flash("Exercício salvo.", "ok")
     except Exception:

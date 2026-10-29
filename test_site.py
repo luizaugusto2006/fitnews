@@ -138,6 +138,48 @@ r = c.get(f"/plano/{tok1}")
 ok_exec = "EXECUCAO-EDITADA teste 123." in r.get_data(as_text=True)
 print("  edicao do admin aparece no plano:", ok_exec)
 assert ok_exec
+# video colado pelo admin vira player embutido no plano
+r = c.post("/admin/exercicios/salvar", data={
+    "id": row["id"], "nome": ex_nome, "grupo": row["grupo"],
+    "equipamento": row["equipamento"], "nivel": row["nivel"],
+    "execucao": "EXECUCAO-EDITADA teste 123.",
+    "video_url": "https://www.youtube.com/watch?v=testvideo123",
+}, follow_redirects=True)
+r = c.get(f"/plano/{tok1}")
+print("  video do admin embutido no plano:", "/embed/testvideo123" in r.get_data(as_text=True))
+assert "/embed/testvideo123" in r.get_data(as_text=True)
+# video fora do formato (URL invalida) e recusado
+r = c.post("/admin/exercicios/salvar", data={
+    "id": row["id"], "nome": ex_nome, "grupo": row["grupo"],
+    "equipamento": row["equipamento"], "nivel": row["nivel"],
+    "video_url": "ftp://fora-de-formato",
+}, follow_redirects=True)
+print("  URL invalida recusada:", "começar com http" in r.get_data(as_text=True))
+assert "começar com http" in r.get_data(as_text=True)
+# sem video cadastrado, o plano oferece a busca no YouTube
+conn = database.get_db()
+conn.execute("UPDATE exercicios SET video_url='' WHERE id=?", (row["id"],))
+conn.commit()
+conn.close()
+r = c.get(f"/plano/{tok1}")
+print("  busca no YouTube como fallback:",
+      "youtube.com/results?search_query=" in r.get_data(as_text=True))
+assert "youtube.com/results?search_query=" in r.get_data(as_text=True)
+# imagem colada pelo admin aparece no plano
+r = c.post("/admin/exercicios/salvar", data={
+    "id": row["id"], "nome": ex_nome, "grupo": row["grupo"],
+    "equipamento": row["equipamento"], "nivel": row["nivel"],
+    "imagem_url": "https://exemplo.com/exercicio.png",
+}, follow_redirects=True)
+r = c.get(f"/plano/{tok1}")
+print("  imagem no plano:", "exercicio.png" in r.get_data(as_text=True))
+assert "exercicio.png" in r.get_data(as_text=True)
+# CSV exporta as colunas de video e imagem
+r = c.get("/admin/exportar/exercicios")
+csv_txt = r.get_data(as_text=True)
+print("  CSV com video_url/imagem_url:",
+      "video_url" in csv_txt and "imagem_url" in csv_txt)
+assert "video_url" in csv_txt and "imagem_url" in csv_txt
 
 print("== Personal trainer ==")
 r = c.get("/personal")

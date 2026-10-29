@@ -39,6 +39,19 @@
     <label class="campo"><span>Como fazer (execução mostrada no plano)</span>
       <textarea name="execucao" rows="4"
         placeholder="Explique em 2-3 frases: posição inicial, movimento, respiração e erros comuns.">{{ ex['execucao'] if ex and ex['execucao'] else '' }}</textarea></label>
+    <div class="grade grade-2">
+      <label class="campo"><span>Vídeo do YouTube (URL)</span>
+        <input type="url" name="video_url"
+               value="{{ ex['video_url'] if ex and ex['video_url'] else '' }}"
+               placeholder="https://www.youtube.com/watch?v=...">
+        <small class="dica">Aparece embutido no "Como fazer" do plano. Se vazio, o
+          plano mostra um link de busca no YouTube com o nome do exercício.</small></label>
+      <label class="campo"><span>Imagem do exercício (URL)</span>
+        <input type="url" name="imagem_url"
+               value="{{ ex['imagem_url'] if ex and ex['imagem_url'] else '' }}"
+               placeholder="https://.../exercicio.jpg">
+        <small class="dica">Mostrada no "Como fazer" do plano, antes do texto.</small></label>
+    </div>
     <div class="acoes">
       <button class="btn" type="submit">Salvar</button>
       <a class="btn btn-fantasma" href="{{ url_for('admin_exercicios') }}">Voltar</a>

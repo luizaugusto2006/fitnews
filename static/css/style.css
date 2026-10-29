@@ -174,6 +174,10 @@ input[readonly] { color: var(--acento); font-weight: 700; }
 .dia-topo h2 { color: var(--acento); margin: 0; }
 .dia-topo p { color: var(--texto2); font-size: .85rem; margin: 0; }
 .como-fazer { margin-top: .35rem; }
+.ex-imagem { display: block; width: 100%; max-width: 420px; margin: .5rem 0 .3rem; border-radius: 10px; }
+.video-box { position: relative; width: 100%; aspect-ratio: 16 / 9; margin: .55rem 0 .3rem; background: #000; border-radius: 10px; overflow: hidden; }
+.video-box iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.yt-busca { font-size: .82rem; font-weight: 700; }
 .como-fazer summary {
   cursor: pointer;
   font-size: .84rem;

@@ -72,6 +72,15 @@
         {% endfor %}
       </div>
     </div>
+    <label class="campo"><span>Como fazer (execução mostrada no plano)</span>
+      <textarea name="execucao" rows="3"
+        placeholder="Explique em 2-3 frases: posição inicial, movimento, respiração e erros comuns."></textarea></label>
+    <div class="grade grade-2">
+      <label class="campo"><span>Vídeo do YouTube (URL)</span>
+        <input type="url" name="video_url" placeholder="https://www.youtube.com/watch?v=..."></label>
+      <label class="campo"><span>Imagem do exercício (URL)</span>
+        <input type="url" name="imagem_url" placeholder="https://.../exercicio.jpg"></label>
+    </div>
     <button class="btn" type="submit">Salvar exercício</button>
   </form>
 </section>
