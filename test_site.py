@@ -1,11 +1,26 @@
 # -*- coding: utf-8 -*-
-"""Smoke test do FitNews (executar: python test_site.py)"""
+"""Smoke test do FitNews (executar: python test_site.py)
+
+Roda sempre num banco proprio (temporario): o fitnews.db real nao e tocado e
+o teste pode ser executado quantas vezes for preciso.
+"""
 import json
+import os
 import re
+import tempfile
+
+_BANCO_TESTE = os.path.join(tempfile.gettempdir(), "fitnews_smoke_test.db")
+for _caminho in (_BANCO_TESTE, _BANCO_TESTE + "-wal", _BANCO_TESTE + "-shm"):
+    if os.path.exists(_caminho):
+        os.remove(_caminho)
+os.environ["FITNEWS_DB"] = _BANCO_TESTE
 
 import app as app_mod
 import database
 from app import app
+
+print("== Banco do teste ==")
+print(" ", database.DB_PATH)
 
 c = app.test_client()
 

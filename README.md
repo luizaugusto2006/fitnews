@@ -90,6 +90,9 @@ Teste automatizado (smoke test):
 python test_site.py
 ```
 
+O teste cria o seu próprio banco temporário (variável `FITNEWS_DB`) — o
+`fitnews.db` real não é tocado e o teste pode rodar quantas vezes precisar.
+
 ## Acesso admin
 
 - URL: `/admin` — usuário e senha definidos em `app.py` (`ADMIN_USER` e

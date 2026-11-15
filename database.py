@@ -8,7 +8,10 @@ import unicodedata
 
 from data_exercises import EXERCISES
 
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fitnews.db")
+# FITNEWS_DB permite usar outro arquivo de banco (testes rodam num arquivo
+# proprio e nunca mexem no fitnews.db de verdade)
+DB_PATH = (os.environ.get("FITNEWS_DB")
+           or os.path.join(os.path.dirname(os.path.abspath(__file__)), "fitnews.db"))
 
 
 def _sem_acento(texto):
