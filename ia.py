@@ -19,14 +19,14 @@ import urllib.request
 TIMEOUT = 30
 
 MODELOS_PADRAO = {
-    "gemini": "gemini-3.8-flash",
+    "gemini": "gemini-3.5-flash-lite",
     "openrouter": "meta-llama/llama-3.3-70b-instruct:free",
     "groq": "llama-3.3-70b-versatile",
 }
 
 # Gemini: se o modelo configurado for descontinuado (HTTP 404), tenta o proximo.
-MODELOS_GEMINI = ("gemini-3.8-flash", "gemini-3.5-flash-lite",
-                  "gemini-3.1-flash-lite")
+MODELOS_GEMINI = ("gemini-3.5-flash-lite", "gemini-3.1-flash-lite",
+                  "gemini-3.6-flash")
 
 ENDPOINTS = {
     "openrouter": "https://openrouter.ai/api/v1/chat/completions",
@@ -92,7 +92,9 @@ def _gemini(sistema, entrada, modelo, chave):
     }, {"x-goog-api-key": chave})
     try:
         partes = dados["candidates"][0]["content"]["parts"]
-        texto = "".join(p.get("text", "") for p in partes).strip()
+        # ignora partes de raciocinio (thought), so o texto final conta
+        texto = "".join(p.get("text", "") for p in partes
+                        if not p.get("thought")).strip()
     except (KeyError, IndexError, TypeError):
         texto = ""
     if not texto:
