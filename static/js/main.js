@@ -49,6 +49,23 @@
     }
   } catch (e) {}
 
+  // seta indicando que ha mais abas para a direita (celular)
+  var caixaAbas = document.querySelector(".abas-caixa");
+  var barraAbas = caixaAbas && caixaAbas.querySelector(".abas");
+  if (caixaAbas && barraAbas) {
+    var atualizaSeta = function () {
+      var rola = barraAbas.scrollWidth > barraAbas.clientWidth + 4;
+      var fim = barraAbas.scrollLeft + barraAbas.clientWidth >=
+                barraAbas.scrollWidth - 6;
+      caixaAbas.classList.toggle("sem-rolagem", !rola);
+      caixaAbas.classList.toggle("fim-abas", rola && fim);
+    };
+    barraAbas.addEventListener("scroll", atualizaSeta);
+    window.addEventListener("resize", atualizaSeta);
+    window.addEventListener("load", atualizaSeta);
+    atualizaSeta();
+  }
+
   // ---------- IMC ----------
   var peso = document.querySelector('input[name="peso"]');
   var altura = document.querySelector('input[name="altura"]');

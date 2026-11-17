@@ -165,6 +165,10 @@ input[readonly] { color: var(--acento); font-weight: 700; }
 }
 .aba:hover { color: var(--texto); }
 .aba.ativa { background: var(--acento); color: #10130f; border-color: var(--acento); }
+.abas-caixa { position: relative; }
+.aba-ia { border-color: rgba(16,185,129,.55); color: #0e9f6e; }
+.aba-ia:hover { color: #0b7a57; border-color: rgba(16,185,129,.85); }
+.aba-ia.ativa { background: #34d399; color: #04231a; border-color: #34d399; }
 .painel { display: none; }
 .painel.ativo { display: block; animation: fade .25s ease; }
 @keyframes fade { from { opacity: 0; transform: translateY(6px);} to { opacity: 1; transform: none; } }
@@ -379,7 +383,7 @@ input[readonly] { color: var(--acento); font-weight: 700; }
 
 /* ---------- impressao ---------- */
 @media print {
-  .topo, .rodape, .abas, .plano-acoes, .acoes, .evitados,
+  .topo, .rodape, .abas, .abas-caixa, .plano-acoes, .acoes, .evitados,
   .marca-plano, .hero-marca { display: none !important; }
   body { background: #fff; color: #000; }
   .painel { display: block !important; page-break-inside: avoid; }
@@ -420,8 +424,29 @@ input[readonly] { color: var(--acento); font-weight: 700; }
   .abas {
     flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch;
     padding-bottom: .7rem; scrollbar-width: thin;
+    scrollbar-color: rgba(56,189,248,.55) rgba(255,255,255,.08);
   }
+  .abas::-webkit-scrollbar { height: 6px; }
+  .abas::-webkit-scrollbar-track { background: rgba(255,255,255,.08); border-radius: 99px; }
+  .abas::-webkit-scrollbar-thumb { background: rgba(56,189,248,.55); border-radius: 99px; }
   .aba { white-space: nowrap; flex: 0 0 auto; min-height: 42px; }
+  /* seta pulsando: mostra que ha mais abas escondidas a direita */
+  .abas-caixa::after {
+    content: "›";
+    position: absolute; top: 0; bottom: .7rem; right: 0; width: 2.7rem;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2rem; font-weight: 800; line-height: 1;
+    color: #34d399;
+    background: linear-gradient(90deg, transparent, rgba(6,11,22,.95) 58%);
+    pointer-events: none; z-index: 5;
+    text-shadow: 0 0 12px rgba(52,211,153,.9);
+    animation: seta-abas 1.4s ease-in-out infinite;
+  }
+  .abas-caixa.fim-abas::after, .abas-caixa.sem-rolagem::after { content: none; }
+  @keyframes seta-abas {
+    0%, 100% { transform: translateX(0); opacity: .7; }
+    50% { transform: translateX(6px); opacity: 1; }
+  }
 
   /* --- grades de uma coluna --- */
   .grade-dias { grid-template-columns: 1fr; }
