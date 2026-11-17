@@ -217,6 +217,7 @@ input[readonly] { color: var(--acento); font-weight: 700; }
 .bloco h3 { color: var(--acento); font-size: 1rem; margin-top: 1.2rem; }
 .lista { padding-left: 1.2rem; }
 .lista li { margin-bottom: .35rem; color: var(--texto2); }
+.lista a { text-decoration: underline; text-underline-offset: 3px; }
 .lista-pontos { list-style: none; padding: 0; margin: .4rem 0 0; }
 .lista-pontos li { padding: .45rem .8rem; background: var(--card); border: 1px solid var(--borda); border-radius: 8px; margin-bottom: .45rem; font-size: .93rem; }
 .along-card { background: var(--card); border: 1px solid var(--borda); border-radius: 10px; padding: 1rem; }
