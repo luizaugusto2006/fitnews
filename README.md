@@ -73,6 +73,13 @@ sugeridos.
     tem acesso ao e-mail consegue usá-lo. Como alternativas continuam o código
     `REC-XXXXXX` e o reset pelo painel admin. Configuração: ver
     [Recuperação de senha por e-mail](#recuperação-de-senha-por-e-mail-opcional).
+21. **Dúvidas com IA** — aba **Dúvidas com IA** no plano: o aluno pergunta sobre
+    execução, postura, carga, séries ou descanso e recebe resposta curta em
+    português, gerada **com o contexto do plano dele** (foco + limitações de saúde —
+    nunca sugere exercício proibido; dor aguda/lesão: encaminha para profissional).
+    Sem chave de IA o servidor mostra a ficha "Como fazer" do banco. Limite de
+    15 perguntas por hora por visitante. Configuração: ver
+    [Dúvidas com IA](#dúvidas-com-ia-opcional).
 
 ## Rodar localmente
 
@@ -127,6 +134,33 @@ exceção). Passos:
 Sem essa configuração o site continua funcionando: a recuperação fica pelo
 código `REC-XXXXXX` e pelo painel admin (que redefine senhas).
 
+## Dúvidas com IA (opcional)
+
+A aba **Dúvidas com IA** no plano responde dúvidas sobre os exercícios usando o
+plano do aluno (exercícios, séries, execução e limitações). Sem configuração o
+site continua funcionando: o servidor responde com a ficha **Como fazer** do
+banco quando a dúvida cita um exercício, ou avisa que o assistente ainda não foi
+configurado.
+
+Para ligar a IA (provedor padrão: **Google Gemini**, tier gratuito):
+
+1. Gere uma chave em https://ai.google.dev (ou use OpenRouter/Groq — tiers gratuitos).
+2. Configure (escolha **uma** forma):
+   - **Variáveis de ambiente** — `IA_PROVIDER` (`gemini`, `openrouter` ou `groq`),
+     `IA_API_KEY` e, se quiser, `IA_MODEL` (o padrão do provedor é usado se vazio);
+   - **Ou arquivo local** `ia_secreto.py` na raiz do repositório (está no
+     `.gitignore`, nunca vai para o GitHub):
+     ```python
+     IA_PROVIDER = "gemini"
+     IA_API_KEY = "sua-chave-aqui"
+     ```
+3. `git pull` + **Web → Reload**.
+
+Comportamento: resposta de no máximo 150 palavras em texto puro, sempre dentro
+do contexto do plano, com aviso de que não substitui avaliação profissional;
+15 perguntas por hora por visitante; a chave vai só no cabeçalho da chamada e
+nunca aparece em página ou log.
+
 ## Área do Personal
 
 - URL: `/personal` — cadastro livre (e-mail + senha de 6+ caracteres).
@@ -175,6 +209,7 @@ código `REC-XXXXXX` e pelo painel admin (que redefine senhas).
 fitnews/
 ├── app.py               # rotas Flask (público + admin)
 ├── gerador.py           # gerador do plano (treino, alongamento, nutrição, suplementos)
+├── ia.py                # cliente da IA para dúvidas (Gemini/OpenRouter/Groq)
 ├── database.py          # esquema SQLite + seed
 ├── data_exercises.py    # base de exercícios + contraindicações
 ├── data_content.py      # alongamentos, dietas por idade, suplementos

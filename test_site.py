@@ -596,5 +596,71 @@ assert pl3 is not None and pl3["usuario_id"] == u["id"]
 r = c.get("/planos")
 assert "Plano Salvo Existente" in r.get_data(as_text=True)
 
+print("== Duvidas com IA ==")
+# semanejo: o teste nunca chama a rede (IA tratada como nao configurada)
+_cfg, _perg = app_mod.ia.configurado, app_mod.ia.perguntar
+app_mod.ia.configurado = lambda: False
+r = c.get("/plano/" + tok1)
+hp = r.get_data(as_text=True)
+print("  aba Duvidas com IA no plano:", 'data-aba="duvidas"' in hp
+      and 'duvidaEnviar' in hp and 'duvidaRespostas' in hp)
+assert 'data-aba="duvidas"' in hp and 'duvidaEnviar' in hp
+url_d = "/plano/%s/duvida" % tok1
+r = c.post(url_d, json={"pergunta": "oi"})
+print("  pergunta curta -> 400:", r.status_code == 400)
+assert r.status_code == 400
+# sem IA configurada: cita um exercicio -> mostra a ficha "Como fazer" do banco
+r = c.post(url_d, json={"pergunta": "Como devo fazer Supino reto com barra corretamente?"})
+d = r.get_json() or {}
+print("  sem IA -> ficha do banco:", r.status_code == 200 and d.get("ok")
+      and "Supino reto com barra" in d.get("resposta", "")
+      and "ficha" in d.get("aviso", "").lower())
+assert r.status_code == 200 and d.get("ok")
+assert "Supino reto com barra" in d["resposta"]
+# sem IA e sem exercicio citado -> aviso de que nao foi configurado
+r = c.post(url_d, json={"pergunta": "Quero saber sobre alimentacao para o meu dia."})
+print("  sem IA e sem ficha -> 503:", r.status_code == 503)
+assert r.status_code == 503
+# IA respondendo (chamada simulada, sem rede)
+app_mod.ia.configurado = lambda: True
+app_mod.ia.perguntar = lambda sistema, contexto, pergunta: "Resposta simulada da IA."
+r = c.post(url_d, json={"pergunta": "Como devo fazer Supino reto com barra?"})
+d = r.get_json() or {}
+print("  IA configurada responde:", r.status_code == 200 and d.get("ok")
+      and d.get("resposta") == "Resposta simulada da IA.")
+assert r.status_code == 200 and d.get("ok") and d["resposta"] == "Resposta simulada da IA."
+# o contexto enviado a IA traz limitacoes e exercicios do plano
+app_mod.ia.perguntar = lambda sistema, contexto, pergunta: contexto
+r = c.post(url_d, json={"pergunta": "Quero saber sobre alimentacao para o meu dia."})
+d = r.get_json() or {}
+ctx = d.get("resposta", "")
+print("  contexto traz limitacoes e exercicios:",
+      "limitações de saúde" in ctx.lower() and "hérnia de disco" in ctx.lower()
+      and "EXERCÍCIOS DO PLANO" in ctx)
+assert "limitações de saúde" in ctx.lower() and "hérnia de disco" in ctx.lower()
+assert "EXERCÍCIOS DO PLANO" in ctx
+# o sistema sempre orienta a respeitar as limitacoes do aluno
+app_mod.ia.perguntar = lambda sistema, contexto, pergunta: sistema
+r = c.post(url_d, json={"pergunta": "Quero saber sobre alimentacao para o meu dia."})
+d = r.get_json() or {}
+print("  regras de seguranca no prompt:",
+      "limitações de saúde" in d.get("resposta", "").lower()
+      and "avaliação" in d.get("resposta", "").lower())
+assert "limitações de saúde" in d.get("resposta", "").lower()
+# limite de 15 perguntas por hora (sessao nova)
+app_mod.ia.configurado = lambda: False
+app_mod.ia.perguntar = _perg
+c2 = app.test_client()
+for i in range(15):
+    rr = c2.post(url_d, json={"pergunta": "duvida %d sobre alimentacao qualquer" % i})
+    assert rr.status_code == 503, "limite contou errado na pergunta %d" % i
+rr = c2.post(url_d, json={"pergunta": "mais uma duvida sobre alimentacao"})
+print("  16a pergunta na hora -> 429:", rr.status_code == 429)
+assert rr.status_code == 429
+# pergunta curta nao entra na conta do limite
+rr = c2.post(url_d, json={"pergunta": "oi"})
+assert rr.status_code == 400
+app_mod.ia.configurado, app_mod.ia.perguntar = _cfg, _perg
+
 print()
 print("TODOS OS TESTES PASSARAM" if falhas == 0 else "HOUVE FALHAS")

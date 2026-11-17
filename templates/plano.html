@@ -92,6 +92,7 @@
     <button class="aba" data-aba="aquecimento">Aquecimento &amp; Alongamento</button>
     <button class="aba" data-aba="alimentacao">Alimentação</button>
     <button class="aba" data-aba="suplementos">Suplementos</button>
+    <button class="aba" data-aba="duvidas">Dúvidas com IA</button>
   </div>
 
   <!-- ============ TREINO ============ -->
@@ -266,6 +267,40 @@
         Não os utilize sem orientação se você toma medicamentos, é gestante ou tem condição clínica.
         Procure um nutricionista para um plano individualizado.
       </div>
+    </section>
+  </div>
+
+  <div class="painel" id="aba-duvidas">
+    <section class="bloco">
+      <h2>Dúvidas sobre os exercícios</h2>
+      <p class="campo-ajuda">Pergunte sobre execução, postura, carga, séries ou
+        descanso. As respostas usam <strong>o seu plano e as suas limitações</strong>
+        e são geradas por IA — conteúdo educativo, não substitui avaliação
+        profissional.</p>
+
+      {% if plano['dados']['dias'] and plano['dados']['dias'][0]['exercicios'] %}
+      <div class="share-botoes" style="margin-top:.9rem">
+        {% for e in plano['dados']['dias'][0]['exercicios'][:3] %}
+        <button type="button" class="btn btn-mini btn-fantasma"
+                data-sugestao="Como devo fazer {{ e['nome'] }} corretamente?">
+          Como fazer {{ e['nome'] }}</button>
+        {% endfor %}
+        <button type="button" class="btn btn-mini btn-fantasma"
+                data-sugestao="Estou sentindo dor durante o treino. O que faço?">
+          Estou sentindo dor</button>
+      </div>
+      {% endif %}
+
+      <div class="campo" style="margin-top:1.1rem">
+        <span>Sua dúvida</span>
+        <textarea id="duvidaTexto" rows="3"
+                  placeholder="Ex.: sinto um aperto no ombro no supino reto, continua normal?"></textarea>
+      </div>
+      <div class="acoes">
+        <button type="button" class="btn" id="duvidaEnviar">Perguntar</button>
+        <span class="campo-ajuda" id="duvidaStatus" role="status" aria-live="polite"></span>
+      </div>
+      <div id="duvidaRespostas" aria-live="polite"></div>
     </section>
   </div>
 
@@ -460,6 +495,57 @@
   function fecharModal() { modal.hidden = true; }
   document.getElementById("modalFechar").addEventListener("click", fecharModal);
   modal.addEventListener("click", function (ev) { if (ev.target === modal) fecharModal(); });
+
+  // ---------- Dúvidas com IA ----------
+  var campoD = document.getElementById("duvidaTexto");
+  var caixaD = document.getElementById("duvidaRespostas");
+  var statusD = document.getElementById("duvidaStatus");
+  var enviarD = document.getElementById("duvidaEnviar");
+  var duvidaUrl = {{ ('/plano/' ~ plano['token'] ~ '/duvida')|tojson }};
+
+  function msgD(cls, texto) {
+    var d = document.createElement("div");
+    d.className = "msg " + cls;
+    d.textContent = texto;
+    caixaD.appendChild(d);
+    d.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+  function perguntarD() {
+    var txt = (campoD.value || "").trim();
+    if (txt.length < 4) { statusD.textContent = "Escreva sua dúvida."; campoD.focus(); return; }
+    enviarD.disabled = true;
+    statusD.textContent = "Pensando…";
+    msgD("msg-aluno", txt);
+    campoD.value = "";
+    fetch(duvidaUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pergunta: txt })
+    }).then(function (r) {
+      return r.json().then(function (d) { return d; });
+    }).then(function (d) {
+      enviarD.disabled = false; statusD.textContent = "";
+      if (d && d.ok) {
+        msgD("msg-ia", d.resposta);
+        if (d.aviso) msgD("msg-aviso", d.aviso);
+      } else {
+        msgD("msg-erro", (d && d.erro) || "Não consegui responder agora.");
+      }
+    }).catch(function () {
+      enviarD.disabled = false; statusD.textContent = "";
+      msgD("msg-erro", "Falha de conexão. Tente de novo.");
+    });
+  }
+  if (enviarD) enviarD.addEventListener("click", perguntarD);
+  if (campoD) campoD.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); perguntarD(); }
+  });
+  document.querySelectorAll("[data-sugestao]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      campoD.value = b.dataset.sugestao;
+      campoD.focus();
+    });
+  });
 })();
 </script>
 {% endblock %}

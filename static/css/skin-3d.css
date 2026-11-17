@@ -596,6 +596,35 @@
     .ponto-admin { background: rgba(56,189,248,.45); }
     .ponto-admin:hover { background: var(--acento); box-shadow: 0 0 12px rgba(56,189,248,.9); }
 
+    /* ---------- Dúvidas com IA ---------- */
+    .msg {
+        white-space: pre-wrap;
+        padding: .85rem 1.05rem; border-radius: 12px; margin: .7rem 0;
+        font-size: .95rem; line-height: 1.55;
+    }
+    .msg-aluno {
+        background: linear-gradient(180deg, rgba(56,189,248,.16), rgba(56,189,248,.08));
+        border: 1px solid rgba(56,189,248,.4);
+        color: #e0f2fe;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+    }
+    .msg-ia {
+        background: linear-gradient(165deg, #13203a, #0d1730);
+        border: 1px solid rgba(52,211,153,.4);
+        color: #cbd5e1;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 12px 26px rgba(0,0,0,.45);
+    }
+    .msg-erro {
+        background: linear-gradient(180deg, rgba(36,18,28,.9), rgba(24,12,20,.95));
+        border: 1px solid rgba(248,113,113,.45);
+        color: #fecaca;
+    }
+    .msg-aviso {
+        background: none; border: none; box-shadow: none;
+        padding: 0 0 0 .3rem; font-size: .8rem; color: var(--texto2);
+    }
+    button[disabled] { opacity: .6; cursor: wait; }
+
     /* ---------- Ornamentos ---------- */
     .fig-branca {
         background: #fff;
@@ -677,7 +706,7 @@
     a { color: #000 !important; text-shadow: none !important; }
     .card, .dia, .bloco, .along-card, .item-plano, .aviso, .aceite,
     .evitados, .caixa-destaque, .codigo-vinculo, .modal-caixa,
-    .formulario fieldset, .lista-pontos li, .macros .macro {
+    .formulario fieldset, .lista-pontos li, .macros .macro, .msg {
         background: #fff !important;
         color: #1e293b !important;
         border: 1px solid #999 !important;

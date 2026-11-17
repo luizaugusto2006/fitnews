@@ -7,3 +7,4 @@ venv/
 instance/
 fitnews.db
 mail_secreto.py
+ia_secreto.py
