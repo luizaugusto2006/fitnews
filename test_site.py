@@ -647,6 +647,36 @@ print("  regras de seguranca no prompt:",
       "limitações de saúde" in d.get("resposta", "").lower()
       and "avaliação" in d.get("resposta", "").lower())
 assert "limitações de saúde" in d.get("resposta", "").lower()
+# modelo descontinuado (HTTP 404) cai automaticamente no proximo da lista
+app_mod.ia.perguntar = _perg
+_cfgfn, _postfn = app_mod.ia._config, app_mod.ia._post_json
+_urls = []
+def _cfg_fake():
+    return ("gemini", "chave-fake", "gemini-2.0-flash")
+def _post_fake(url, payload, headers):
+    _urls.append(url)
+    if "gemini-2.0-flash" in url:
+        raise app_mod.ia.IAErro("o provedor recusou a chamada (HTTP 404)")
+    return {"candidates": [{"content": {"parts": [{"text": "Fallback OK"}]}}]}
+app_mod.ia._config = _cfg_fake
+app_mod.ia._post_json = _post_fake
+app_mod.ia.configurado = lambda: True
+r = c.post(url_d, json={"pergunta": "Como devo fazer Supino reto com barra?"})
+d = r.get_json() or {}
+print("  404 no modelo tenta o proximo:", r.status_code == 200
+      and d.get("resposta") == "Fallback OK" and len(_urls) == 2)
+assert r.status_code == 200 and d.get("resposta") == "Fallback OK"
+assert len(_urls) == 2
+# erro diferente de 404 nao tenta outro modelo
+_urls.clear()
+def _post_403(url, payload, headers):
+    _urls.append(url)
+    raise app_mod.ia.IAErro("o provedor recusou a chamada (HTTP 403)")
+app_mod.ia._post_json = _post_403
+r = c.post(url_d, json={"pergunta": "Como devo fazer Supino reto com barra?"})
+print("  403 nao tenta outro modelo:", r.status_code == 502 and len(_urls) == 1)
+assert r.status_code == 502 and len(_urls) == 1
+app_mod.ia._config, app_mod.ia._post_json = _cfgfn, _postfn
 # limite de 15 perguntas por hora (sessao nova)
 app_mod.ia.configurado = lambda: False
 app_mod.ia.perguntar = _perg

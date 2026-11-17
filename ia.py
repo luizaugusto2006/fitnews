@@ -19,10 +19,14 @@ import urllib.request
 TIMEOUT = 30
 
 MODELOS_PADRAO = {
-    "gemini": "gemini-2.0-flash",
+    "gemini": "gemini-3.8-flash",
     "openrouter": "meta-llama/llama-3.3-70b-instruct:free",
     "groq": "llama-3.3-70b-versatile",
 }
+
+# Gemini: se o modelo configurado for descontinuado (HTTP 404), tenta o proximo.
+MODELOS_GEMINI = ("gemini-3.8-flash", "gemini-3.5-flash-lite",
+                  "gemini-3.1-flash-lite")
 
 ENDPOINTS = {
     "openrouter": "https://openrouter.ai/api/v1/chat/completions",
@@ -78,6 +82,24 @@ def _post_json(url, payload, headers):
                      % exc.__class__.__name__) from None
 
 
+def _gemini(sistema, entrada, modelo, chave):
+    url = ("https://generativelanguage.googleapis.com/v1beta/models/"
+           + modelo + ":generateContent")
+    dados = _post_json(url, {
+        "system_instruction": {"parts": [{"text": sistema}]},
+        "contents": [{"role": "user", "parts": [{"text": entrada}]}],
+        "generationConfig": {"maxOutputTokens": 800, "temperature": 0.4},
+    }, {"x-goog-api-key": chave})
+    try:
+        partes = dados["candidates"][0]["content"]["parts"]
+        texto = "".join(p.get("text", "") for p in partes).strip()
+    except (KeyError, IndexError, TypeError):
+        texto = ""
+    if not texto:
+        raise IAErro("resposta vazia ou inesperada do Gemini")
+    return texto
+
+
 def perguntar(sistema, contexto, pergunta):
     """Devolve a resposta da IA. Levanta IAErro em qualquer falha."""
     provedor, chave, modelo = _config()
@@ -87,21 +109,16 @@ def perguntar(sistema, contexto, pergunta):
     entrada = contexto.strip() + "\n\nPergunta do aluno: " + pergunta.strip()
 
     if provedor == "gemini":
-        url = ("https://generativelanguage.googleapis.com/v1beta/models/"
-               + modelo + ":generateContent")
-        dados = _post_json(url, {
-            "system_instruction": {"parts": [{"text": sistema}]},
-            "contents": [{"role": "user", "parts": [{"text": entrada}]}],
-            "generationConfig": {"maxOutputTokens": 800, "temperature": 0.4},
-        }, {"x-goog-api-key": chave})
-        try:
-            partes = dados["candidates"][0]["content"]["parts"]
-            texto = "".join(p.get("text", "") for p in partes).strip()
-        except (KeyError, IndexError, TypeError):
-            texto = ""
-        if not texto:
-            raise IAErro("resposta vazia ou inesperada do Gemini")
-        return texto
+        tentativas = [modelo] + [m for m in MODELOS_GEMINI if m != modelo]
+        ultimo = None
+        for alt in tentativas:
+            try:
+                return _gemini(sistema, entrada, alt, chave)
+            except IAErro as exc:
+                ultimo = exc
+                if "HTTP 404" not in str(exc):
+                    raise
+        raise ultimo
 
     url = ENDPOINTS.get(provedor)
     if not url:
